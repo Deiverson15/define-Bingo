@@ -1,0 +1,8 @@
+const GLOBAL_BASE_URL = 'http://26.23.127.246:3000';
+
+const API_BASE_URL = GLOBAL_BASE_URL;
+
+const SOCKET_URL = GLOBAL_BASE_URL;
+
+const AUTO_PRINT_ENABLED = false;
+

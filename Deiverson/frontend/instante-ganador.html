@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Instante Ganador — Pro Casino</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Oxanium:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#070910;           /* Fondo base */
+      --panel:#0e1220;        /* Paneles */
+      --ink:#e7eefc;          /* Texto claro */
+      --muted:#9fb0d1;        /* Texto secundario */
+      --brand:#67e8f9;        /* Cian casino */
+      --brand-2:#a78bfa;      /* Lila */
+      --gold:#ffd479;         /* Dorado */
+      --danger:#ff6b6b;       /* Rojo */
+      --success:#8fffac;      /* Verde */
+    }
+    html,body{height:100%}
+    body{ background: radial-gradient(1200px 700px at 10% -10%, rgba(103,232,249,.15), transparent 60%), radial-gradient(1000px 600px at 110% 110%, rgba(167,139,250,.12), transparent 60%), var(--bg); color: var(--ink); font-family: 'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial; }
+
+    /* Borde premium animado */
+    .lux-border{ position:relative; }
+    .lux-border:before{ content:""; position:absolute; inset:-1px; border-radius:inherit; padding:1px; background: linear-gradient(135deg, rgba(103,232,249,.5), rgba(167,139,250,.4) 35%, rgba(255,212,121,.45) 70%, rgba(103,232,249,.5)); -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none; }
+
+    .title-shine{ font-family:'Oxanium', ui-sans-serif; letter-spacing: .02em; text-shadow:0 0 20px rgba(103,232,249,.35); }
+    .gold-text{ background: linear-gradient(180deg,#fff7cf, var(--gold), #c9a04e 75%); -webkit-background-clip: text; background-clip:text; color:transparent; }
+    .soft-glow{ box-shadow: 0 0 18px rgba(103,232,249,.25), inset 0 0 0 1px rgba(255,255,255,.06); }
+
+    /* Scratch */
+    .scratch-active{ cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="%23ffd479" stroke="black" stroke-width="1.5"><circle cx="12" cy="12" r="10"/></svg>') 16 16, crosshair; }
+    .foil{ position:absolute; inset:0; pointer-events:none }
+    .foil:after{ content:""; position:absolute; inset:-25%; background: conic-gradient(from 0deg, rgba(255,255,255,.05), rgba(255,255,255,0) 35%, rgba(255,255,255,.08) 60%, rgba(255,255,255,0)); filter: blur(10px); animation: rotate 8s linear infinite; }
+    @keyframes rotate{ to{ transform: rotate(1turn); } }
+
+    .pop{ animation:pop .45s cubic-bezier(.2,.8,.2,1) both }
+    @keyframes pop{ 0%{ transform:scale(.7); opacity:0 } 100%{ transform:scale(1); opacity:1 } }
+
+    /* Botones */
+    .btn{ @apply inline-flex items-center justify-center font-extrabold rounded-xl px-4 py-3 transition active:scale-[.98]; }
+  </style>
+</head>
+<body class="min-h-screen py-8 px-4 sm:px-6">
+  <div class="mx-auto max-w-5xl">
+    <!-- Barra superior -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div>
+        <p class="text-[11px] uppercase tracking-[.25em] text-[var(--muted)]">Rasca profesional</p>
+        <h1 class="title-shine text-3xl sm:text-4xl font-extrabold">Instante <span class="gold-text">Ganador</span> <span class="text-[var(--brand-2)]">Pro</span></h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="rounded-2xl bg-[var(--panel)]/80 border border-white/10 px-4 py-3 text-right">
+          <div class="text-[10px] uppercase tracking-wider text-[var(--muted)]">Saldo</div>
+          <div class="font-black text-lg"><span id="balance-amount">1000.00</span> Bs</div>
+        </div>
+        <button id="add-funds" class="btn bg-white/5 border border-white/10 hover:bg-white/10">+ Fondos</button>
+      </div>
+    </div>
+
+    <!-- Tarjeta / Panel principal -->
+    <div class="grid lg:grid-cols-5 gap-6">
+      <!-- Columna juego -->
+      <div class="lg:col-span-3">
+        <div class="lux-border rounded-3xl bg-[var(--panel)]/70 p-5 sm:p-6 relative overflow-hidden">
+          <div class="absolute top-0 right-0 p-4 text-xs text-[var(--muted)]">ID Ticket: <span id="ticket-id">—</span></div>
+
+          <!-- tarjeta -->
+          <div id="scratch-card" class="relative rounded-2xl overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 aspect-[16/9] soft-glow">
+            <!-- contenido oculto -->
+            <div id="prize-grid" class="absolute inset-0 grid grid-cols-3 gap-2 p-4 z-10">
+              <div class="flex items-center justify-center text-6xl bg-black/30 rounded-xl"></div>
+              <div class="flex items-center justify-center text-6xl bg-black/30 rounded-xl"></div>
+              <div class="flex items-center justify-center text-6xl bg-black/30 rounded-xl"></div>
+            </div>
+            <canvas id="scratch-canvas" class="absolute inset-0 z-20"></canvas>
+            <div class="foil"></div>
+          </div>
+
+          <!-- Progreso de revelado -->
+          <div class="mt-4 h-2 bg-white/10 rounded-full overflow-hidden">
+            <div id="reveal-progress" class="h-full w-0 bg-[var(--brand)] transition-[width] duration-300"></div>
+          </div>
+
+          <!-- Mensaje de resultado -->
+          <p id="win-message" class="h-8 mt-4 text-center text-lg font-extrabold text-transparent select-none">&nbsp;</p>
+
+          <!-- Acciones principales -->
+          <div class="mt-3 flex flex-col sm:flex-row gap-3">
+            <button id="buy-button" class="btn grow bg-[var(--brand)] text-black hover:brightness-110 soft-glow">Comprar ticket</button>
+            <button id="auto-reveal" class="btn bg-white/5 border border-white/10 hover:bg-white/10">Auto revelar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna lateral → controles / info -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Control de apuesta -->
+        <div class="lux-border rounded-3xl bg-[var(--panel)]/70 p-5">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-[var(--muted)] mb-3">Apuesta</h3>
+          <div class="flex flex-wrap items-center gap-2">
+            <button data-bet="50" class="bet-chip btn bg-white/5 border border-white/10 hover:bg-white/10">50 Bs</button>
+            <button data-bet="100" class="bet-chip btn bg-white/5 border border-white/10 hover:bg-white/10 ring-2 ring-[var(--brand)]">100 Bs</button>
+            <button data-bet="200" class="bet-chip btn bg-white/5 border border-white/10 hover:bg-white/10">200 Bs</button>
+            <button data-bet="500" class="bet-chip btn bg-white/5 border border-white/10 hover:bg-white/10">500 Bs</button>
+          </div>
+        </div>
+
+        <!-- Tabla de pagos -->
+        <div class="lux-border rounded-3xl bg-[var(--panel)]/70 p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-[var(--muted)]">Tabla de pagos</h3>
+            <button id="payouts-button" class="btn bg-white/5 border border-white/10 hover:bg-white/10 px-3 py-2 text-xs">Ver más</button>
+          </div>
+          <ul id="payouts" class="space-y-2 text-sm">
+            <li class="flex items-center justify-between bg-white/5 rounded-xl px-3 py-2"><span>🍒🍒🍒</span> <b class="text-[var(--gold)]">x5</b></li>
+            <li class="flex items-center justify-between bg-white/5 rounded-xl px-3 py-2"><span>🍋🍋🍋</span> <b class="text-[var(--gold)]">x3</b></li>
+            <li class="flex items-center justify-between bg-white/5 rounded-xl px-3 py-2"><span>🍇🍇🍇</span> <b class="text-[var(--gold)]">x2</b></li>
+          </ul>
+        </div>
+
+        <!-- Reglas / RTP -->
+        <div class="lux-border rounded-3xl bg-[var(--panel)]/70 p-5">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-[var(--muted)] mb-3">Información</h3>
+          <ul class="space-y-2 text-sm text-[var(--muted)]">
+            <li>Raspa al menos el <b>65%</b> de la tarjeta para descubrir el resultado.</li>
+            <li>Premio si obtienes <b>3 símbolos iguales</b>.</li>
+            <li>Audio ajustable, saldo persistente en el dispositivo.</li>
+          </ul>
+          <div class="mt-3 flex items-center justify-between">
+            <div class="text-xs">Volumen</div>
+            <input id="vol-slider" type="range" min="0" max="1" step="0.01" value="0.35" class="w-40">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pie -->
+    <div class="mt-8 text-[11px] text-[var(--muted)] flex items-center justify-between">
+      <div>Versión <b>Pro Casino</b></div>
+      <div>© 2025</div>
+    </div>
+  </div>
+
+  <!-- Modal genérico -->
+  <dialog id="modal" class="backdrop:bg-black/70 rounded-2xl p-0 w-[min(92vw,28rem)]">
+    <div class="bg-[#0b1020] text-white rounded-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+        <h3 id="modal-title" class="text-lg font-extrabold"></h3>
+        <button id="modal-close" class="px-2 py-1 text-white/70 hover:text-white">✕</button>
+      </div>
+      <div id="modal-body" class="p-5 text-sm leading-relaxed text-white/80"></div>
+      <div class="p-4 border-t border-white/10 text-right">
+        <button id="modal-ok" class="bg-[var(--brand)] text-black font-bold px-4 py-2 rounded-lg">Entendido</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- libs -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // DOM
+    const canvas = document.getElementById('scratch-canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const card = document.getElementById('scratch-card');
+    const prizeSlots = document.querySelectorAll('#prize-grid > div');
+    const buyButton = document.getElementById('buy-button');
+    const autoReveal = document.getElementById('auto-reveal');
+    const addFunds = document.getElementById('add-funds');
+    const balanceDisplay = document.getElementById('balance-amount');
+    const winMessage = document.getElementById('win-message');
+    const revealBar = document.getElementById('reveal-progress');
+    const payoutsBtn = document.getElementById('payouts-button');
+    const ticketIdEl = document.getElementById('ticket-id');
+
+    // Modal
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    const modalClose = document.getElementById('modal-close');
+    const modalOk = document.getElementById('modal-ok');
+
+    // Audio por WebAudio
+    const volSlider = document.getElementById('vol-slider');
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const playBeep = (freq = 650, dur = 0.06, type='sine', gain=0.25) => {
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.type = type; osc.frequency.value = freq;
+      g.gain.value = (parseFloat(volSlider.value) || gain) * gain;
+      osc.connect(g); g.connect(audioCtx.destination);
+      const t = audioCtx.currentTime;
+      g.gain.setValueAtTime(g.gain.value, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.start(t); osc.stop(t + dur);
+    };
+    const coinSound = () => { playBeep(520, .04, 'triangle', .7); setTimeout(()=>playBeep(880, .05, 'triangle', .7), 40); };
+    const winSound = () => { [880, 1046, 1318].forEach((f,i)=> setTimeout(()=> playBeep(f, .09, 'sawtooth', .9), 100*i)); };
+
+    // Estado
+    let balance = parseFloat(localStorage.getItem('casino_balance') || '1000');
+    let BET = parseFloat(localStorage.getItem('casino_bet') || '100');
+    let isDrawing = false; let gameFinished = true; let currentPrize = null; let autoTimer = null;
+
+    // Símbolos / pagos
+    const FRUITS = ['🍒','🍋','🍇','🍊','🍉','🍓'];
+    const PRIZES = [
+      { prize: [FRUITS[0],FRUITS[0],FRUITS[0]], mult: 5, message: '¡PREMIO MAYOR!', weight: 2 },
+      { prize: [FRUITS[1],FRUITS[1],FRUITS[1]], mult: 3, message: '¡Gran Premio!', weight: 8 },
+      { prize: [FRUITS[2],FRUITS[2],FRUITS[2]], mult: 2, message: '¡Ganaste!', weight: 15 },
+      { prize: 'lose', mult: 0, message: 'Sigue intentando', weight: 75 },
+    ];
+
+    function generateTicketId(){
+      const t = Date.now().toString(36).slice(-6).toUpperCase();
+      const r = Math.random().toString(36).slice(2,5).toUpperCase();
+      return `${t}-${r}`;
+    }
+
+    function generateLosingCombination(){
+      let combo = [];
+      while(combo.length < 3 || (combo[0] === combo[1] && combo[1] === combo[2])){
+        combo = [
+          FRUITS[Math.floor(Math.random()*FRUITS.length)],
+          FRUITS[Math.floor(Math.random()*FRUITS.length)],
+          FRUITS[Math.floor(Math.random()*FRUITS.length)],
+        ];
+      }
+      return combo;
+    }
+
+    function selectWeightedPrize(){
+      const totalWeight = PRIZES.reduce((s,p)=> s+p.weight, 0);
+      let r = Math.random()*totalWeight;
+      for(const p of PRIZES){
+        if(r < p.weight){
+          if(p.prize === 'lose') return { ...p, prize: generateLosingCombination() };
+          return p;
+        }
+        r -= p.weight;
+      }
+    }
+
+    function setupCanvas(){
+      const rect = card.getBoundingClientRect();
+      canvas.width = rect.width; canvas.height = rect.height; ctx.clearRect(0,0,canvas.width,canvas.height);
+      // capa foil suave
+      const g = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+      g.addColorStop(0, '#e5e7eb'); g.addColorStop(0.5, '#b7bcc7'); g.addColorStop(1, '#e5e7eb');
+      ctx.fillStyle = g; ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#334155';
+      ctx.font = `800 ${Math.max(18, Math.min(40, canvas.width*.09))}px Oxanium`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('RASPA', canvas.width/2, canvas.height/2);
+    }
+
+    function updateRevealProgress(){
+      const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
+      const total = canvas.width * canvas.height; if(!total) return 0;
+      const data = imageData.data; let transparent = 0;
+      for(let i=3;i<data.length;i+=4){ if(data[i] === 0) transparent++; }
+      const pct = (transparent/total)*100; revealBar.style.width = `${pct.toFixed(1)}%`;
+      return pct;
+    }
+
+    function revealCard(){
+      if(gameFinished) return; gameFinished = true; isDrawing = false; card.classList.remove('scratch-active');
+      canvas.style.transition = 'opacity .6s ease-out'; canvas.style.opacity = '0';
+      const value = (currentPrize.mult || 0) * BET;
+      if(value > 0){
+        winMessage.textContent = `${currentPrize.message} +${value.toFixed(2)} Bs`; winMessage.classList.remove('text-transparent'); winMessage.style.color = 'var(--success)';
+        balance += value; balanceDisplay.textContent = balance.toFixed(2); localStorage.setItem('casino_balance', balance.toFixed(2));
+        confetti({ particleCount: 140, spread: 90, origin: { y: 0.6 }}); winSound();
+        prizeSlots.forEach((slot,i)=>{ slot.style.animationDelay = `${i*90}ms`; slot.classList.add('pop'); });
+      } else {
+        winMessage.textContent = 'No hay premio esta vez'; winMessage.classList.remove('text-transparent'); winMessage.style.color = 'var(--muted)';
+      }
+      buyButton.textContent = 'Jugar de nuevo'; buyButton.disabled = false; autoReveal.disabled = false;
+    }
+
+    function scratch(e){
+      if(!isDrawing || gameFinished) return;
+      const rect = canvas.getBoundingClientRect();
+      const point = (e.touches && e.touches[0]) || e;
+      const cx = point.clientX - rect.left; const cy = point.clientY - rect.top;
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath(); ctx.arc(cx, cy, 22, 0, Math.PI*2, false); ctx.fill();
+      const pct = updateRevealProgress();
+      if(pct > 65) revealCard();
+    }
+
+    function startScratch(){ isDrawing = true; }
+    function endScratch(){ isDrawing = false; updateRevealProgress(); }
+
+    function startRound(){
+      if(balance < BET){
+        modalTitle.textContent = 'Saldo insuficiente';
+        modalBody.innerHTML = 'Recarga tu saldo o selecciona una apuesta menor.';
+        modal.showModal(); playBeep(200, .12, 'square', .8); return;
+      }
+      // Reset
+      gameFinished = false; buyButton.disabled = true; autoReveal.disabled = false;
+      winMessage.classList.add('text-transparent'); winMessage.style.color = 'transparent';
+      revealBar.style.width = '0%'; prizeSlots.forEach(s=>{ s.textContent=''; s.classList.remove('pop'); });
+
+      // Compra
+      balance -= BET; balanceDisplay.textContent = balance.toFixed(2); localStorage.setItem('casino_balance', balance.toFixed(2)); coinSound();
+      currentPrize = selectWeightedPrize();
+      prizeSlots.forEach((slot, i) => { slot.textContent = currentPrize.prize[i]; });
+      ticketIdEl.textContent = generateTicketId();
+      setupCanvas(); card.classList.add('scratch-active'); canvas.style.opacity = '1';
+
+      // listeners
+      canvas.onmousedown = startScratch; canvas.onmouseup = endScratch; canvas.onmouseleave = endScratch; canvas.onmousemove = scratch;
+      canvas.ontouchstart = (e)=>{ e.preventDefault(); startScratch(); };
+      canvas.ontouchend = (e)=>{ e.preventDefault(); endScratch(); };
+      canvas.ontouchmove = (e)=>{ e.preventDefault(); scratch(e); };
+    }
+
+    // Eventos UI
+    buyButton.addEventListener('click', startRound);
+    autoReveal.addEventListener('click', () => {
+      if(gameFinished) return;
+      autoReveal.disabled = true;
+      let steps = 40; const rect = canvas.getBoundingClientRect();
+      const timer = setInterval(()=>{
+        const cx = Math.random()*rect.width; const cy = Math.random()*rect.height;
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath(); ctx.arc(cx, cy, 28, 0, Math.PI*2, false); ctx.fill();
+        const pct = updateRevealProgress();
+        if(--steps <= 0 || pct > 65){ clearInterval(timer); revealCard(); }
+      }, 20);
+    });
+
+    addFunds.addEventListener('click', () => {
+      modalTitle.textContent = 'Añadir fondos';
+      modalBody.innerHTML = '<p class="mb-3">Ingresa monto a recargar (Bs):</p><input id="topup" type="number" min="1" step="1" value="500" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2">';
+      modal.showModal();
+      setTimeout(()=>{ document.getElementById('topup').focus(); }, 0);
+    });
+
+    modalOk.addEventListener('click', () => {
+      const top = document.getElementById('topup');
+      if(top){ const val = Math.max(0, parseFloat(top.value||'0')); balance += val; balanceDisplay.textContent = balance.toFixed(2); localStorage.setItem('casino_balance', balance.toFixed(2)); playBeep(660,.07,'triangle',.8); }
+      if(modal.open) modal.close();
+    });
+    document.getElementById('modal-close').addEventListener('click', () => { if(modal.open) modal.close(); });
+
+    // Chips de apuesta
+    document.querySelectorAll('.bet-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.bet-chip').forEach(b=> b.classList.remove('ring-2','ring-[var(--brand)]'));
+        btn.classList.add('ring-2','ring-[var(--brand)]');
+        BET = parseFloat(btn.dataset.bet); localStorage.setItem('casino_bet', BET.toFixed(2));
+      });
+    });
+
+    // Payouts modal
+    payoutsBtn.addEventListener('click', () => {
+      const lines = [
+        { sym:'🍒🍒🍒', mult:5 },
+        { sym:'🍋🍋🍋', mult:3 },
+        { sym:'🍇🍇🍇', mult:2 },
+      ];
+      modalTitle.textContent = 'Tabla de pagos';
+      modalBody.innerHTML = '<div class="space-y-2">' + lines.map(l=>`<div class=\"bg-white/5 rounded-xl px-3 py-2 flex items-center justify-between\"><span>${l.sym}</span><b class=\"text-[var(--gold)]\">x${l.mult}</b></div>`).join('') + '</div>';
+      modal.showModal();
+    });
+
+    // Init
+    balanceDisplay.textContent = balance.toFixed(2);
+    document.querySelector(`.bet-chip[data-bet=\"${BET}\"]`)?.classList.add('ring-2','ring-[var(--brand)]');
+    setupCanvas(); winMessage.textContent = '\u00A0';
+  });
+  </script>
+</body>
+</html>

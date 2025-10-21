@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imprimir Ticket</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+    <style>
+    /* Estilos para la vista previa en pantalla */
+    body { 
+        background-color: #e5e7eb; 
+        color: #000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1rem;
+    }
+
+    #ticket-container {
+        width: 100%;
+        max-width: 45mm; 
+        padding: 5px; 
+        background-color: white;
+        border: 1px dashed #999;
+    }
+
+    /* --- ESTILOS DE IMPRESIÓN OPTIMIZADOS --- */
+    @page {
+        size: auto;
+        margin: 0;
+    }
+
+    @media print {
+        body > *:not(#ticket-container) { display: none !important; }
+
+        html, body {
+            height: auto !important;
+            width: 45mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #fff !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        #ticket-container {
+            width: 100% !important;
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 1mm !important;
+            border: none !important;
+            box-shadow: none !important;
+            font-size: 10px;
+            font-weight: 700;
+            color: #000;
+        }
+
+        #ticket-content img {
+            width: 90% !important;
+            max-height: 35px !important; 
+            margin: 0 auto !important; 
+        }
+        
+        #ticket-content h2 { font-size: 10px !important; margin: 1px 0 !important; }
+
+        #columns-list-container {
+            display: flex !important; 
+            flex-wrap: wrap; 
+            justify-content: center;
+            align-items: center;
+            padding: 1px !important; 
+            margin: 1px 0 !important; 
+            border-top: 1px solid black;
+            border-bottom: 1px solid black;
+        }
+        
+        .column-cell-number {
+            display: inline-flex; 
+            align-items: center;
+            justify-content: center;
+            height: 15px;
+            min-width: 15px;
+            padding: 0 2px; 
+            font-size: 12px; 
+            font-weight: 700; /* Aumentado */
+            margin: 1px; 
+            border: 1px solid black;
+        }
+
+        .info-line, .total-line, .final-message { margin: 0 !important; padding: 0 !important; line-height: 1.15 !important; /* Reducido */ }
+        .total-line { font-size: 13px !important; font-weight: 800 !important; /* Aumentado */ }
+        .info-separator { border-color: black !important; margin: 1px 0 !important; /* Reducido */ }
+        .final-message { font-size: 6px !important; font-weight: 800; }
+    }
+    </style>
+</head>
+<body class="bg-gray-200 text-black">
+
+    <div class="no-print w-full max-w-sm mb-4 p-4 bg-white rounded-lg shadow-md">
+        <h2 class="text-center text-xl font-bold mb-3">Vista previa de Impresión</h2>
+        <p class="text-center text-sm text-gray-500">El diálogo de impresión se abrirá automáticamente.</p>
+    </div>
+    
+    <div id="ticket-container" class="text-center font-sans"> 
+        <h1 id="loading-message" class="text-xl font-bold">Cargando datos del ticket...</h1>
+        <div id="ticket-content" class="hidden">
+            <img src="img/logo.webp" alt="Logo Apuesta200" class="mx-auto block"> 
+            <h2 class="font-semibold">COLUMNAS JUGADAS</h2>
+            <div id="columns-list-container"></div>
+            <div class="text-left font-semibold">
+                <p class="info-line">TICKET: <span id="ticket-id"></span></p>
+                <p class="info-line">ID PARTIDA: <span id="ticket-game-id"></span></p>
+                <p class="info-line"><span id="ticket-date"></span></p>
+                <hr class="info-separator">
+                <p class="info-line text-xs">Subtotal: <span id="ticket-subtotal"></span> Bs</p>
+                <p class="info-line text-red-600">Desc. Aplicado: <span id="ticket-discount"></span> Bs</p>
+                <p class="total-line">Total: <span id="ticket-monto"></span> Bs</p>
+                <hr class="info-separator">
+                <p class="info-line text-xs">Pago: <span id="ticket-payment"></span></p>
+            </div>
+            <p class="final-message">SIN TICKET SELLADO NO COBRAS. VÁLIDO SÓLO PARA LA FECHA DEL TICKET.</p>
+            <p>.</p>
+        </div>
+    </div>
+
+    <script src="js/print-ticket.js"></script> 
+    <script src="/js/config.js"></script>
+</body>
+</html>

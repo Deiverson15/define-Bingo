@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Sala Virtual de Bingo - Apuesta200</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        :root{ --bg: #0b1020; --bg-card: #0a1322; --text: #e6f1ef; --muted: #9fb2b0; --primary: #10b981; --accent: #6366f1; }
+        body{ font-family: 'Inter', sans-serif; background: #0f1529; color: var(--text); }
+        .card{ background: var(--bg-card); border: 1px solid rgba(255,255,255,.06); border-radius: 1rem; }
+        .btn{ font-weight: 700; padding: .6rem 1rem; border-radius: .7rem; transition: .2s ease; }
+        .bingo-card-cell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-weight: 800; border-radius: 0.5rem; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); }
+        .bingo-card-cell.marked { background: var(--primary); color: var(--bg); transform: scale(1.1); box-shadow: 0 0 15px var(--primary); }
+        .carton-selector.active { border-color: var(--accent); background: rgba(99,102,241, 0.2); }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+    <main class="max-w-7xl mx-auto">
+        <header id="main-header" class="flex flex-wrap justify-between items-center gap-4 mb-8">
+            <div>
+                <h1 class="text-3xl font-black tracking-tight">Sala de Bingo Virtual</h1>
+                <p id="welcome-message" class="text-accent">¡Bienvenido!</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div id="balance-display" class="card p-3 text-center">
+                    <p class="text-xs text-gray-400">Tu Saldo</p>
+                    <p class="text-2xl font-bold text-yellow-400">0.00 Bs</p>
+                </div>
+                <a href="index.html" class="btn bg-gray-800 hover:bg-gray-700">Salir</a>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div class="lg:col-span-1">
+                <div class="card p-4">
+                    <h3 class="text-lg font-bold mb-3 text-center">Elige tu Cartón (1-15)</h3>
+                    <div id="carton-selection-grid" class="grid grid-cols-5 gap-2">
+                        </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-3">
+                <div class="card p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 id="current-carton-title" class="text-2xl font-bold">Selecciona un cartón para empezar</h2>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-400">Costo por Jugada</p>
+                            <p class="font-bold text-lg">10.00 Bs</p>
+                        </div>
+                    </div>
+
+                    <div id="bingo-card-container" class="hidden grid grid-cols-5 gap-2 text-2xl max-w-sm mx-auto mb-4">
+                        </div>
+                    
+                    <button id="play-button" class="btn bg-primary text-black w-full text-xl flex items-center justify-center gap-2" disabled>
+                        <i data-lucide="play"></i> Jugar Ronda
+                    </button>
+
+                    <div id="game-info" class="text-center mt-4 h-8"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>lucide.createIcons();</script>
+    <script src="js/config.js"></script>
+    <script src="js/sala-bingo.js"></script>
+</body>
+</html>

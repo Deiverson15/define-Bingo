@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Revisar Pago y Confirmar Ticket - Apuesta200</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
+
+    body{
+      font-family:'Poppins',sans-serif;
+      background-color:#111827;
+      background-image:
+        linear-gradient(rgba(17,24,39,.7),rgba(17,24,39,.7)),
+        url('img/fondo_apuesta.webp');
+      background-size:cover;
+      background-position:center bottom;
+      background-repeat:no-repeat;
+      background-attachment:fixed;
+      color:#fff;
+      overflow-x:hidden;
+      overflow-y: auto; 
+    }
+
+    /* ESTILOS DE ALTO CONTRASTE Y COMPACTO */
+    .columns-container{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;min-height:30px} 
+    .column-cell{
+      background-color:#FFFFFF; 
+      color: #000;
+      border:3px solid #facc15; /* Borde amarillo más grueso */
+      border-radius:6px; 
+      font-weight:900; 
+      font-size:1.2rem; 
+      width:36px; 
+      height:36px; 
+      display:flex;justify-content:center;align-items:center;
+      box-shadow: 0 0 8px rgba(250, 204, 21, 0.4); 
+    }
+    
+    .card-style-uniform { /* Estilo uniforme para TODAS las tarjetas (Alto Contraste: Fondo Blanco) */
+        background-color: #FFFFFF; 
+        color: #000; 
+        border: 4px solid #111827; 
+        box-shadow: 0 8px 20px rgba(0,0,0,0.9), inset 0 0 8px rgba(0,0,0,0.2); 
+    }
+    
+    /* Clase específica para el contenedor del QR */
+    .qr-container {
+        height: 100%; 
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem 0.5rem; 
+    }
+    .qr-container img {
+        width: 95%; 
+        max-width: 250px; 
+        height: auto;
+    }
+
+    /* Bloqueo móviles pequeños (se ve solo tablet/PC) */
+    @media (max-width:640px){
+      body>*:not(.mobile-blocker){display:none!important}
+      .mobile-blocker{display:flex!important}
+      body{background-attachment:scroll}
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+  <div class="mobile-blocker hidden fixed inset-0 bg-black/85 text-center items-center justify-center flex-col z-50 p-6">
+    <h2 class="text-xl font-bold text-yellow-400 mb-2">No disponible en teléfonos pequeños</h2>
+    <p class="text-gray-300 text-xs max-w-xs mx-auto">Por favor usa una tablet o computadora para verificar tu ticket.</p>
+  </div>
+
+  <header class="absolute top-0 left-0 p-4">
+    <a href="/"><img src="img/logo.webp" alt="Logo Apuesta200" class="h-8"></a>
+  </header>
+
+  <div class="w-full max-w-5xl bg-transparent rounded-2xl pt-2 pb-4 px-3"> 
+    <h1 class="text-2xl font-black text-center mb-6 tracking-wider text-green-400">
+      REVISA TU PAGO Y CONFIRMA TU TICKET
+    </h1>
+
+    <div class="flex flex-col md:flex-row justify-center items-stretch gap-4">
+        
+        <div class="w-full md:w-1/3 card-style-uniform h-full rounded-xl text-black p-0">
+             <div class="qr-container">
+                <h2 class="text-xl font-black text-center text-red-600 mb-2 tracking-wider uppercase">CÓDIGO QR</h2>
+                <img src="img/banco.webp" alt="QR Pago Móvil" 
+                     class="rounded-lg border-4 border-gray-900/50 p-1 bg-white mb-2">
+                <p class="text-xs font-black text-gray-800 text-center uppercase leading-tight mt-2">ESCANEAR PARA TRANSFERIR</p>
+            </div>
+        </div>
+
+        <div class="w-full md:w-1/3 card-style-uniform h-full p-4 flex flex-col items-center rounded-xl space-y-2 text-black">
+            <h2 class="text-xl font-black text-center text-red-600 mb-2 tracking-wider uppercase">PAGO MÓVIL</h2>
+            
+            <div class="w-full bg-yellow-400 rounded-xl p-2 text-center leading-none shadow-xl border-2 border-black">
+                <p class="text-2xl font-black text-black">PAGO MÓVIL</p>
+            </div>
+            
+            <div class="w-full text-center space-y-2 p-1"> 
+                <div class="bg-gray-200 p-2 rounded-lg border border-gray-400">
+                    <p class="text-sm font-bold text-gray-800 uppercase">Cédula:</p>
+                    <p class="text-3xl font-black text-red-600 tracking-wider">26672208</p>
+                </div>
+                <div class="bg-gray-200 p-2 rounded-lg border border-gray-400">
+                    <p class="text-sm font-bold text-gray-800 uppercase">Teléfono:</p>
+                    <p class="text-3xl font-black text-red-600 tracking-wider">0412-5314814</p>
+                </div>
+                <div class="bg-gray-200 p-2 rounded-lg border border-gray-400">
+                    <p class="text-sm font-bold text-gray-800 uppercase">Banco:</p>
+                    <p class="text-3xl font-black text-red-600 tracking-wider">0102 - Venezuela</p>
+                </div>
+            </div>
+            <p class="text-xs font-black text-gray-800 text-center uppercase leading-tight mt-2">
+                ¡Transferir el MONTO TOTAL antes de confirmar!
+            </p>
+        </div>
+
+        <div class="w-full md:w-1/3 card-style-uniform h-full p-4 flex flex-col items-center rounded-xl space-y-2 text-black"> 
+            <h3 class="text-xl font-black text-red-600 uppercase tracking-wider">COLUMNAS Y MONTO</h3>
+            <p class="text-base font-black text-black">Partida: <span id="ticket-game-id-display" class="font-black">---</span></p>
+            <div id="ticket-columns-container" class="columns-container mb-2"></div>
+            
+            <div class="w-full text-center py-2 rounded-lg bg-gray-200 border border-gray-400 shadow-lg mt-auto">
+                <p class="text-base font-black text-black uppercase">MONTO TOTAL A PAGAR:</p>
+                <p id="total-amount-display" class="text-4xl font-black text-red-600 mt-1 tracking-widest">--.-- Bs</p> 
+            </div>
+
+            <p class="text-xs font-extrabold my-1 text-black text-center uppercase leading-snug">
+              REVISE COLUMNAS Y MONTO.<br> NO HABRÁ DEVOLUCIÓN.
+            </p>
+            <p id="discount-info-display" class="text-xs font-semibold text-red-400 h-4"></p> 
+            <p id="ticket-datetime" class="text-xs font-semibold text-black"></p>
+        </div>
+    </div>
+
+    <footer class="mt-6 flex justify-between items-center">
+      <button id="cancel-button" class="bg-red-600 hover:bg-red-700 text-white text-base font-black py-2 px-5 rounded-lg transition-colors">
+        CANCELAR
+      </button>
+      <button id="confirm-button" class="bg-green-600 hover:bg-green-700 text-white text-base font-black py-2 px-5 rounded-lg transition-colors">
+        CONFIRMAR PAGO
+      </button>
+    </footer>
+  </div>
+
+  <div id="success-overlay" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-gray-800 border border-gray-700 w-full max-w-sm rounded-2xl p-4 text-center shadow-xl">
+      <img src="img/logo.webp" alt="Logo" class="h-8 mx-auto mb-2">
+      <h2 id="success-title" class="text-xl font-extrabold text-green-400">¡Ticket Generado con Éxito!</h2>
+      <p class="text-sm text-gray-200 mt-1 mb-3">¡Mucha suerte en tu jugada!</p>
+      <div id="success-data" class="mb-3"></div>
+      <div id="print-request-area" class="mb-3"></div>
+      <a href="index.html" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg text-xs transition-colors block w-full">Regresar al Inicio</a>
+    </div>
+  </div>
+
+  <div id="pago-movil-modal" class="hidden fixed inset-0 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-gray-800 border border-gray-700 w-full max-w-xs rounded-xl p-6 relative shadow-xl">
+      <button id="close-pago-movil-modal" class="absolute top-3 right-3 text-gray-400 hover:text-white transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+      <h2 class="text-xl font-bold text-center mb-4">Datos del Pago Móvil</h2>
+      <form id="pago-movil-form" class="space-y-4">
+        <div>
+          <label for="payment-reference" class="block text-xs font-medium text-gray-300 mb-1">Nº de Referencia</label>
+          <input type="text" id="payment-reference" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white focus:ring-yellow-400 focus:border-yellow-400 transition" placeholder="referencia" maxlength="12" inputmode="numeric">
+        </div>
+        <div>
+          <label for="payment-bank" class="block text-xs font-medium text-gray-300 mb-1">Banco Emisor</label>
+          <select id="payment-bank" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-white focus:ring-yellow-400 focus:border-yellow-400 transition">
+            <option value="" disabled selected>Selecciona un banco</option>
+            <option value="0102 - Banco de Venezuela">0102 - Banco de Venezuela</option>
+            <option value="0104 - Venezolano de Crédito">0104 - Venezolano de Crédito</option>
+            <option value="0105 - Banco Mercantil">0105 - Banco Mercantil</option>
+            <option value="0108 - BBVA Provincial">0108 - BBVA Provincial</option>
+            <option value="0114 - Bancaribe">0114 - Bancaribe</option>
+            <option value="0115 - Banco Exterior">0115 - Banco Exterior</option>
+            <option value="0128 - Banco Caroní">0128 - Banco Caroní</option>
+            <option value="0134 - Banesco">0134 - Banesco</option>
+            <option value="0137 - Banco Sofitasa">0137 - Banco Sofitasa</option>
+            <option value="0138 - Banco Plaza">0138 - Banco Plaza</option>
+            <option value="0146 - Bangente">0146 - Bangente</option>
+            <option value="0151 - BFC Banco Fondo Común">0151 - BFC Banco Fondo Común</option>
+            <option value="0156 - 100% Banco">0156 - 100% Banco</option>
+            <option value="0157 - DelSur">0157 - DelSur</option>
+            <option value="0163 - Banco del Tesoro">0163 - Banco del Tesoro</option>
+            <option value="0166 - Banco Agrícola de Venezuela">0166 - Banco Agrícola de Venezuela</option>
+            <option value="0168 - Bancrecer">0168 - Bancrecer</option>
+            <option value="0169 - Mi Banco">0169 - Mi Banco</option>
+            <option value="0171 - Banco Activo">0171 - Banco Activo</option>
+            <option value="0172 - Bancamiga">0172 - Bancamiga</option>
+            <option value="0174 - Banplus">0174 - Banplus</option>
+            <option value="0175 - Banco Bicentenario">0175 - Banco Bicentenario</option>
+            <option value="0177 - BANFANB">0177 - BANFANB</option>
+            <option value="0191 - BNC Nacional de Crédito">0191 - BNC Nacional de Crédito</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full bg-yellow-400 text-gray-900 font-bold py-2 rounded-lg hover:bg-yellow-500 transition-colors text-sm">
+          Enviar y Confirmar
+        </button>
+      </form>
+    </div>
+  </div>
+  
+  <div id="manual-print-spinner-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-gray-800 border border-gray-700 w-full max-w-sm rounded-2xl p-6 text-center shadow-xl">
+        <svg class="animate-spin h-8 w-8 text-yellow-400 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12H4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <h2 class="text-lg font-extrabold text-yellow-400 mb-2">Solicitud Enviada</h2>
+        <p class="text-xs text-gray-200">El administrador está procesando tu ticket.</p>
+        <p class="text-xs text-gray-500 mt-3">ID de Ticket: <span id="manual-spinner-ticket-id"></span></p>
+    </div>
+  </div>
+
+  <script src="/js/config.js"></script> <script src="/js/ticket.js"></script>
+
+</body>
+</html>

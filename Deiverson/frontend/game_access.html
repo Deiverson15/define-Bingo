@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acceso a Sala Privada - Apuesta200</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap');
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #111827;
+      background-image:
+        linear-gradient(rgba(17, 24, 39, 0.8), rgba(17, 24, 39, 0.8)),
+        url('img/fondo_apuesta.webp');
+      background-size: cover;
+      background-position: center bottom;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      color: #fff;
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-2xl bg-gray-900/90 border border-gray-700 rounded-2xl p-6 shadow-2xl">
+        <img src="img/logo.webp" alt="Logo Apuesta200" class="h-10 mx-auto mb-6">
+        <h2 class="text-2xl font-black text-center mb-2 text-yellow-400">Salas de Juegos Virtuales</h2>
+        <p class="text-sm text-gray-400 text-center mb-6">1. Selecciona tu sala. | 2. Ingresa tu código de acceso único.</p>
+        
+        <div id="salas-list-container" class="space-y-3 max-h-60 overflow-y-auto mb-6">
+            </div>
+        
+        <a href="index.html" class="block text-center mt-4 text-sm text-gray-500 hover:text-white">Volver al inicio</a>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/game_access.js"></script> 
+</body>
+</html>

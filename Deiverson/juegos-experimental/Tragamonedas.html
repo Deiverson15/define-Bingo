@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Tragamonedas Clásica — Pro Casino (ES)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Oxanium:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{ --bg:#070910; --panel:#0e1220; --ink:#e7eefc; --muted:#9fb0d1; --brand:#67e8f9; --brand2:#a78bfa; --gold:#ffd479; --danger:#ff6b6b; }
+    html,body{height:100%}
+    body{ background: radial-gradient(1200px 700px at 10% -10%, rgba(103,232,249,.12), transparent 60%), radial-gradient(1100px 700px at 110% 110%, rgba(167,139,250,.1), transparent 60%), var(--bg); color: var(--ink); font-family: 'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial; }
+
+    .machine{ position:relative; border-radius:1.25rem; background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01)); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 20px 60px rgba(0,0,0,.45); }
+    .title{ font-family:'Oxanium'; text-shadow:0 0 24px rgba(103,232,249,.3) }
+
+    /* Reels */
+    .reels{ position:relative; background: #0b0f1e; border-radius:1rem; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+    .reel{ overflow:hidden; background:linear-gradient(#111827,#0b1120); border-radius: .75rem; box-shadow: inset 0 0 30px rgba(0,0,0,.6); }
+    .strip{ display:flex; flex-direction:column; align-items:center; }
+    .cell{ width:100%; height:90px; display:flex; align-items:center; justify-content:center; font-size:64px; color:#111; background:linear-gradient(#fafafa,#eaeaea); border-top:1px solid rgba(0,0,0,.08); border-bottom:1px solid rgba(0,0,0,.08); text-shadow:0 1px 0 #fff; }
+    .cell.bar{ font-weight:800; letter-spacing:.04em; font-size:44px; color:#111; background:linear-gradient(#fff,#eaeaea); }
+    .cell.bar span{ display:inline-block; background:#111; color:#ffd33d; padding:.12rem .4rem; border-radius:.35rem; box-shadow:inset 0 0 0 2px #0003 }
+
+    .payline{ position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); height:2px; background:linear-gradient(90deg, transparent 8%, #ff3b3b 8% 92%, transparent 92%); box-shadow:0 0 8px rgba(255,59,59,.55); }
+    .payline::before{ content:'LÍNEA DE PREMIO'; position:absolute; left:10px; top:-14px; font-size:10px; font-weight:800; background:#ff3b3b; color:white; padding:.2rem .4rem; border-radius:.35rem; }
+
+    .btn{ @apply inline-flex items-center justify-center font-extrabold rounded-xl px-4 py-3 transition active:scale-[.98]; }
+    .soft{ box-shadow: 0 0 16px rgba(103,232,249,.20), inset 0 0 0 1px rgba(255,255,255,.06); }
+  </style>
+</head>
+<body class="min-h-screen py-8 px-4 sm:px-6">
+  <div class="mx-auto max-w-6xl">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div>
+        <p class="text-[11px] uppercase tracking-[.25em] text-[var(--muted)]">Tragamonedas Clásica • 1 línea</p>
+        <h1 class="title text-3xl sm:text-4xl font-extrabold">Free<span class="text-[var(--brand2)]">Slots</span> — <span class="text-[var(--brand)]">Edición Pro</span></h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="rounded-2xl bg-[var(--panel)]/80 border border-white/10 px-4 py-3 text-right">
+          <div class="text-[10px] uppercase tracking-wider text-[var(--muted)]">Créditos</div>
+          <div class="font-black text-lg"><span id="credits">200</span> Bs</div>
+        </div>
+        <div class="rounded-2xl bg-[var(--panel)]/80 border border-white/10 px-4 py-3 text-right">
+          <div class="text-[10px] uppercase tracking-wider text-[var(--muted)]">Apuesta</div>
+          <div class="font-black text-lg"><span id="bet">1</span> Bs</div>
+        </div>
+        <button id="guia" class="btn bg-white/5 border border-white/10 hover:bg-white/10">Guía rápida</button>
+      </div>
+    </div>
+
+    <div class="machine p-6">
+      <!-- Reels + Payline -->
+      <div class="reels grid grid-cols-3 gap-4 p-4 relative">
+        <div class="payline"></div>
+        <div class="reel h-[270px]"><div id="reel-0" class="strip"></div></div>
+        <div class="reel h-[270px]"><div id="reel-1" class="strip"></div></div>
+        <div class="reel h-[270px]"><div id="reel-2" class="strip"></div></div>
+      </div>
+
+      <!-- HUD inferior -->
+      <div class="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <button id="bet-one" class="btn bg-white/5 border border-white/10 hover:bg-white/10">Apuesta +1</button>
+        <button id="bet-max" class="btn bg-white/5 border border-white/10 hover:bg-white/10">Apuesta Máxima</button>
+        <button id="spin" class="btn bg-[var(--brand)] text-black hover:brightness-110 soft">Girar</button>
+        <button id="paytable" class="btn bg-white/5 border border-white/10 hover:bg-white/10">Tabla de Pagos</button>
+      </div>
+
+      <!-- Mensajes -->
+      <div id="message" class="mt-4 h-8 text-center text-lg font-extrabold text-[var(--muted)] select-none">&nbsp;</div>
+    </div>
+
+    <div class="mt-8 text-[11px] text-[var(--muted)] flex items-center justify-between">
+      <div>Versión <b>Pro Casino</b> — Español</div>
+      <div>© 2025</div>
+    </div>
+  </div>
+
+  <!-- Modal genérico -->
+  <dialog id="modal" class="backdrop:bg-black/70 rounded-2xl p-0 w-[min(92vw,32rem)]">
+    <div class="bg-[#0b1020] text-white rounded-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+        <h3 id="modal-title" class="text-lg font-extrabold"></h3>
+        <button id="modal-close" class="px-2 py-1 text-white/70 hover:text-white">✕</button>
+      </div>
+      <div id="modal-body" class="p-5 text-sm leading-relaxed text-white/80"></div>
+      <div class="p-4 border-t border-white/10 text-right">
+        <button id="modal-ok" class="bg-[var(--brand)] text-black font-bold px-4 py-2 rounded-lg">Entendido</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // ---- Estado y configuración ----
+    const SYMBOLS = [
+      { k:'BAR', html:'<span>BAR</span>' },
+      { k:'7', html:'7', cls:'seven' },
+      { k:'CHERRY', html:'🍒' },
+      { k:'STAR', html:'⭐' },
+      { k:'BELL', html:'🔔' },
+      { k:'LEMON', html:'🍋' },
+    ];
+    const STRIP = [ 'BAR','7','CHERRY','LEMON','STAR','BELL','BAR','7','CHERRY','LEMON','STAR','BELL' ];
+
+    let credits = parseInt(localStorage.getItem('slots_credits') || '200', 10);
+    let bet = parseInt(localStorage.getItem('slots_bet') || '1', 10);
+    const BET_MAX = 5; // apuesta máxima por giro
+    const REELS = [document.getElementById('reel-0'), document.getElementById('reel-1'), document.getElementById('reel-2')];
+
+    const elCredits = document.getElementById('credits');
+    const elBet = document.getElementById('bet');
+    const msg = document.getElementById('message');
+    const btnSpin = document.getElementById('spin');
+    const btnBetOne = document.getElementById('bet-one');
+    const btnBetMax = document.getElementById('bet-max');
+    const btnPay = document.getElementById('paytable');
+    const btnGuide = document.getElementById('guia');
+
+    // Audio simple con WebAudio
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function blip(f=700, d=.05, type='square', g=.2){
+      const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+      osc.type = type; osc.frequency.value = f; gain.gain.value = g; osc.connect(gain); gain.connect(audioCtx.destination);
+      const t = audioCtx.currentTime; gain.gain.setValueAtTime(g, t); gain.gain.exponentialRampToValueAtTime(0.0001, t+d); osc.start(t); osc.stop(t+d);
+    }
+
+    // ---- Utils ----
+    const fmtBs = (n)=> `${n} Bs`;
+    function symHtml(key){ const s = SYMBOLS.find(x=>x.k===key); return `<div class="cell ${key==='BAR'?'bar':''}">${s.k==='BAR'?'<span>BAR</span>':s.html}</div>`; }
+    function fillReel(el){ el.innerHTML = STRIP.map(symHtml).join(''); el.style.transform = 'translateY(0)'; }
+    function updateHUD(){ elCredits.textContent = credits; elBet.textContent = bet; localStorage.setItem('slots_credits', credits); localStorage.setItem('slots_bet', bet); }
+    function pickResult(){
+      const bag = [ 'BAR','BAR', '7','7','7','7', 'CHERRY','CHERRY','CHERRY','LEMON','LEMON','STAR','BELL' ];
+      return [0,1,2].map(()=> bag[Math.floor(Math.random()*bag.length)]);
+    }
+    const wrap = (i,len)=> ((i%len)+len)%len;
+
+    // Pagos por línea (1 línea)
+    const PAYOUTS = {
+      'BAR,BAR,BAR': 50,
+      '7,7,7': 25,
+      'CHERRY,CHERRY,CHERRY': 10,
+      'LEMON,LEMON,LEMON': 8,
+      'STAR,STAR,STAR': 6,
+      'BELL,BELL,BELL': 4,
+      '7,7,*': 3,
+      'PAIR': 2,
+    };
+
+    function evaluate([a,b,c]){
+      const key = `${a},${b},${c}`;
+      let mult = 0; let title = 'Sin premio';
+      if(PAYOUTS[key]){ mult = PAYOUTS[key]; }
+      else if(a==='7' && b==='7'){ mult = PAYOUTS['7,7,*']; }
+      else if(a===b || b===c || a===c){ mult = PAYOUTS['PAIR']; }
+      if(mult>0){ title = `¡Premio x${mult}!`; }
+      return { mult, title };
+    }
+
+    // ---- Animación de giro ----
+    const CELL_H = 90; // altura de cada celda
+    const VISIBLE_INDEX = 1; // la fila central es la línea de pago
+
+    function spinTo(el, targetIndex, reelIndex, delay){
+      return new Promise(resolve => {
+        const baseLen = STRIP.length; // 12
+        const extra = baseLen*2 + Math.floor(Math.random()*baseLen); // 2+ vueltas
+        const finalIndex = extra + targetIndex - VISIBLE_INDEX; // alineamos símbolo en centro
+        const distance = finalIndex * CELL_H; // px
+        el.style.transition = 'none'; el.style.transform = 'translateY(0px)';
+        requestAnimationFrame(()=>{
+          void el.offsetHeight;
+          el.style.transition = `transform ${1.1 + reelIndex*0.15}s cubic-bezier(.22,.98,.18,.99) ${delay}ms`;
+          el.style.transform = `translateY(-${distance}px)`;
+        });
+        el.addEventListener('transitionend', function handler(){
+          el.removeEventListener('transitionend', handler);
+          // reconstruimos el carrete con 3 celdas finales (wrap seguro)
+          const len = STRIP.length;
+          const center = wrap(targetIndex, len);
+          const top = STRIP[wrap(center-1, len)];
+          const mid = STRIP[center];
+          const bot = STRIP[wrap(center+1, len)];
+          el.innerHTML = [top, mid, bot].map(symHtml).join('');
+          el.style.transition = 'none';
+          el.style.transform = 'translateY(0)';
+          resolve();
+          blip(300+reelIndex*80,.06,'triangle',.15);
+        }, { once:true });
+      });
+    }
+
+    // ---- Flujo principal ----
+    REELS.forEach(fillReel);
+    updateHUD();
+
+    async function play(){
+      if(bet<=0) bet=1; if(bet>BET_MAX) bet = BET_MAX;
+      if(credits < bet){ msg.textContent = 'Créditos insuficientes'; blip(180,.12,'sawtooth',.25); return; }
+      credits -= bet; updateHUD(); msg.textContent = 'Girando…'; btnSpin.disabled = true; btnBetOne.disabled = true; btnBetMax.disabled = true; blip(520,.07,'square',.25);
+
+      const result = pickResult();
+      const targets = result.map(k => STRIP.indexOf(k));
+
+      await Promise.all([
+        spinTo(REELS[0], targets[0], 0, 0),
+        spinTo(REELS[1], targets[1], 1, 80),
+        spinTo(REELS[2], targets[2], 2, 160),
+      ]);
+
+      const { mult, title } = evaluate(result);
+      if(mult>0){
+        const win = bet * mult; credits += win; updateHUD(); msg.textContent = `${title} +${fmtBs(win)}`; confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 }}); blip(880,.09,'sawtooth',.35); setTimeout(()=>blip(1100,.09,'sawtooth',.35), 120);
+      } else { msg.textContent = 'Sigue intentando'; }
+
+      btnSpin.disabled = false; btnBetOne.disabled = false; btnBetMax.disabled = false;
+    }
+
+    // ---- UI ----
+    btnSpin.addEventListener('click', play);
+    btnBetOne.addEventListener('click', () => { bet = (bet % BET_MAX) + 1; updateHUD(); blip(600,.04,'square',.15); });
+    btnBetMax.addEventListener('click', () => { bet = BET_MAX; updateHUD(); blip(700,.05,'square',.18); });
+
+    btnPay.addEventListener('click', () => {
+      showModal('Tabla de pagos', `
+        <div class="space-y-2 text-sm">
+          <div class="bg-white/5 rounded-xl px-3 py-2 flex items-center justify-between"><span>BAR BAR BAR</span> <b class="text-[var(--gold)]">x50</b></div>
+          <div class="bg-white/5 rounded-xl px-3 py-2 flex items-center justify-between"><span>7 7 7</span> <b class="text-[var(--gold)]">x25</b></div>
+          <div class="bg-white/5 rounded-xl px-3 py-2 flex items-center justify-between"><span>🍒 🍒 🍒</span> <b class="text-[var(--gold)]">x10</b></div>
+          <div class="bg-white/5 rounded-xl px-3 py-2 flex items-center justify-between"><span>🍋 🍋 🍋</span> <b class="text-[var(--gold)]">x8</b></div>
+          <div class="bg-white/5 rounded-xl px-3 py-2 flex items-center justify-between"><span>⭐ ⭐ ⭐</span> <b class="text-[var(--gold)]">x6</b></div>
+          <div class="bg-white/5 rounded-xl px-3 py-2 flex items-center justify-between"><span>🔔 🔔 🔔</span> <b class="text-[var(--gold)]">x4</b></div>
+          <div class="bg-white/5 rounded-xl px-3 py-2 flex items-center justify-between"><span>7 7 y cualquiera</span> <b class="text-[var(--gold)]">x3</b></div>
+          <div class="bg-white/5 rounded-xl px-3 py-2 flex items-center justify-between"><span>Dos iguales (cualquiera)</span> <b class="text-[var(--gold)]">x2</b></div>
+          <p class="text-[var(--muted)] pt-1">Los pagos se multiplican por tu apuesta actual en <b>bolívares (Bs)</b>.</p>
+        </div>
+      `);
+    });
+
+    btnGuide.addEventListener('click', () => {
+      showModal('Cómo jugar', `
+        <ol class="list-decimal pl-5 space-y-2 text-sm">
+          <li>Ajusta tu <b>apuesta</b> con <i>Apuesta +1</i> o selecciona <i>Apuesta Máxima</i> (hasta 5 Bs por giro).</li>
+          <li>Pulsa <b>Girar</b>. Los 3 carretes se detendrán en la <b>línea de premio</b> roja.</li>
+          <li>Si los símbolos de la línea forman una combinación de la <b>Tabla de pagos</b>, ¡ganas multiplicando tu apuesta en <b>Bs</b>!</li>
+          <li>Tus <b>créditos</b> (saldo) y <b>apuesta</b> aparecen arriba; se guardan localmente en tu dispositivo.</li>
+        </ol>
+      `);
+    });
+
+    // ---- Modal ----
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    document.getElementById('modal-ok').addEventListener('click', ()=> modal.close());
+    document.getElementById('modal-close').addEventListener('click', ()=> modal.close());
+    function showModal(title, html){ modalTitle.textContent = title; modalBody.innerHTML = html; modal.showModal(); }
+  });
+  </script>
+</body>
+</html>

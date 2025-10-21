@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Tesoro Escondido — Pro Casino</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Oxanium:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{ --bg:#070910; --panel:#0e1220; --ink:#e7eefc; --muted:#9fb0d1; --brand:#67e8f9; --brand2:#a78bfa; --gold:#ffd479; --success:#8fffac; --danger:#ff6b6b; }
+    html,body{height:100%}
+    body{ background: radial-gradient(1100px 650px at 10% -10%, rgba(103,232,249,.15), transparent 60%), radial-gradient(1000px 600px at 110% 110%, rgba(167,139,250,.12), transparent 60%), var(--bg); color: var(--ink); font-family: 'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial; }
+
+    .title{ font-family:'Oxanium'; text-shadow:0 0 24px rgba(103,232,249,.3) }
+    .panel{ background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01)); border:1px solid rgba(255,255,255,.06); box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.04); border-radius:1.25rem }
+    .btn{ @apply inline-flex items-center justify-center font-extrabold rounded-xl px-4 py-3 transition active:scale-[.98]; }
+    .soft{ box-shadow: 0 0 16px rgba(103,232,249,.20), inset 0 0 0 1px rgba(255,255,255,.06); }
+
+    .cell{ position:relative; aspect-ratio:1/1; border-radius:1rem; display:flex; align-items:center; justify-content:center; font-size:46px; cursor:pointer; user-select:none; background:linear-gradient(180deg,#0b1020,#0a0e1a); border:1px solid rgba(255,255,255,.06); box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), inset 0 15px 40px rgba(0,0,0,.5); }
+    .cell.disabled{ pointer-events:none; opacity:.6 }
+    .lid{ position:absolute; inset:0; border-radius:inherit; display:flex; align-items:center; justify-content:center; background: radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,.06), rgba(255,255,255,.02) 45%, rgba(0,0,0,.35)); }
+    .lid::after{ content:'\1F5C3'; /* 📃 drawer as placeholder */ font-size:46px; opacity:.85 }
+
+    .chest-closed::after{ content:'\1F4E6' } /* 📦 */
+    .treasure{ text-shadow:0 0 20px rgba(143,255,172,.45) }
+    .coin{ text-shadow:0 0 14px rgba(255,212,121,.35) }
+    .empty{ opacity:.65 }
+    .bomb{ text-shadow:0 0 20px rgba(255,107,107,.45) }
+
+    .reveal{ animation:pop .35s cubic-bezier(.2,.8,.2,1) both }
+    @keyframes pop{ 0%{ transform:scale(.8); opacity:0 } 100%{ transform:scale(1); opacity:1 } }
+    .shake{ animation:shake .5s ease both }
+    @keyframes shake{ 10%,90%{transform:translate3d(-1px,0,0)} 20%,80%{transform:translate3d(2px,0,0)} 30%,50%,70%{transform:translate3d(-4px,0,0)} 40%,60%{transform:translate3d(4px,0,0)} }
+
+    .badge{ @apply text-[10px] uppercase tracking-wider rounded-lg px-2 py-1; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.04); }
+  </style>
+</head>
+<body class="min-h-screen py-8 px-4 sm:px-6">
+  <div class="mx-auto max-w-6xl">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div>
+        <p class="text-[11px] uppercase tracking-[.25em] text-[var(--muted)]">Juegos Rápidos • Decisión y Suerte</p>
+        <h1 class="title text-3xl sm:text-4xl font-extrabold">Tesoro <span class="text-[var(--brand2)]">Escondido</span> — <span class="text-[var(--brand)]">Edición Pro</span></h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="rounded-2xl bg-[var(--panel)]/80 border border-white/10 px-4 py-3 text-right">
+          <div class="text-[10px] uppercase tracking-wider text-[var(--muted)]">Saldo</div>
+          <div class="font-black text-lg"><span id="balance">1000</span> Bs</div>
+        </div>
+        <div class="rounded-2xl bg-[var(--panel)]/80 border border-white/10 px-4 py-3 text-right">
+          <div class="text-[10px] uppercase tracking-wider text-[var(--muted)]">Bote temporal</div>
+          <div class="font-black text-lg"><span id="pot">0</span> Bs</div>
+        </div>
+        <button id="help" class="btn bg-white/5 border border-white/10 hover:bg-white/10">Cómo se juega</button>
+      </div>
+    </div>
+
+    <div class="panel p-6">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div class="flex items-center gap-2 text-sm text-[var(--muted)]">
+          <span class="badge">Costo por intento: <b class="ml-1 text-white">25 Bs</b></span>
+          <span class="badge">Intentos: <b class="ml-1 text-white" id="moves">0</b></span>
+          <span class="badge">Ronda: <b class="ml-1 text-white" id="round">—</b></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="new" class="btn bg-white/5 border border-white/10 hover:bg-white/10">Nueva Ronda</button>
+          <button id="cashout" class="btn bg-[var(--success)] text-black hover:brightness-110 soft" disabled>Plantarse y Cobrar</button>
+          <button id="continue" class="btn bg-[var(--brand)] text-black hover:brightness-110 soft" disabled>Continuar Buscando</button>
+        </div>
+      </div>
+
+      <!-- Board -->
+      <div id="board" class="grid grid-cols-4 gap-3 sm:gap-4 select-none">
+        <!-- cells injected by JS -->
+      </div>
+
+      <!-- Mensaje -->
+      <div id="message" class="mt-5 h-8 text-center text-lg font-extrabold text-[var(--muted)] select-none">&nbsp;</div>
+    </div>
+
+    <div class="mt-8 text-[11px] text-[var(--muted)] flex items-center justify-between">
+      <div>Versión <b>Pro Casino</b> — Español</div>
+      <div>© 2025</div>
+    </div>
+  </div>
+
+  <!-- Modal genérico -->
+  <dialog id="modal" class="backdrop:bg-black/70 rounded-2xl p-0 w-[min(92vw,34rem)]">
+    <div class="bg-[#0b1020] text-white rounded-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+        <h3 id="modal-title" class="text-lg font-extrabold"></h3>
+        <button id="modal-close" class="px-2 py-1 text-white/70 hover:text-white">✕</button>
+      </div>
+      <div id="modal-body" class="p-5 text-sm leading-relaxed text-white/80"></div>
+      <div class="p-4 border-t border-white/10 text-right">
+        <button id="modal-ok" class="bg-[var(--brand)] text-black font-bold px-4 py-2 rounded-lg">Entendido</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // ---------- Parámetros ----------
+    const COST = 25; // Bs por intento
+    const GRID = 4;  // 4x4
+    const COUNTS = { grand:1, bombs:2, minor:7, empty:6 };
+    const MINOR_VALUES = [30,40,50,60,75]; // premios menores posibles
+
+    // ---------- DOM ----------
+    const board = document.getElementById('board');
+    const elBal = document.getElementById('balance');
+    const elPot = document.getElementById('pot');
+    const elMoves = document.getElementById('moves');
+    const elRound = document.getElementById('round');
+    const msg = document.getElementById('message');
+
+    const btnNew = document.getElementById('new');
+    const btnCash = document.getElementById('cashout');
+    const btnCont = document.getElementById('continue');
+    const btnHelp = document.getElementById('help');
+
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody = document.getElementById('modal-body');
+    const modalOk = document.getElementById('modal-ok');
+    const modalClose = document.getElementById('modal-close');
+
+    // ---------- Audio ----------
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function beep(f=700, d=.05, type='square', g=.25){
+      const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+      osc.type = type; osc.frequency.value = f; gain.gain.value = g; osc.connect(gain); gain.connect(audioCtx.destination);
+      const t = audioCtx.currentTime; gain.gain.setValueAtTime(g, t); gain.gain.exponentialRampToValueAtTime(0.0001, t+d); osc.start(t); osc.stop(t+d);
+    }
+    const coin = ()=>{ beep(520,.06,'triangle',.3); setTimeout(()=>beep(960,.06,'triangle',.3),60); };
+    const lose = ()=>{ beep(220,.18,'sawtooth',.35); };
+    const winFx = ()=>{ [880,1100,1318].forEach((f,i)=> setTimeout(()=>beep(f,.09,'sawtooth',.35), 120*i)); };
+
+    // ---------- Estado ----------
+    let balance = parseFloat(localStorage.getItem('treasure_balance') || '1000');
+    let pot = 0; let moves = 0; let round = 0;
+    let awaitingDecision = false; let roundOver = true;
+    let hidden = []; // contenido de las 16 celdas
+
+    function updateHUD(){ elBal.textContent = balance.toFixed(0); elPot.textContent = pot.toFixed(0); elMoves.textContent = moves; elRound.textContent = round||'—'; localStorage.setItem('treasure_balance', balance.toFixed(0)); }
+
+    function showModal(title, html){ modalTitle.textContent = title; modalBody.innerHTML = html; modal.showModal(); }
+
+    function makeDeck(){
+      const arr = [];
+      arr.push(...Array(COUNTS.grand).fill({t:'grand'}));
+      arr.push(...Array(COUNTS.bombs).fill({t:'bomb'}));
+      for(let i=0;i<COUNTS.minor;i++){ const v = MINOR_VALUES[Math.floor(Math.random()*MINOR_VALUES.length)]; arr.push({t:'minor', v}); }
+      arr.push(...Array(COUNTS.empty).fill({t:'empty'}));
+      // shuffle
+      for(let i=arr.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [arr[i],arr[j]] = [arr[j],arr[i]]; }
+      return arr;
+    }
+
+    function renderBoard(){
+      board.innerHTML = '';
+      for(let i=0;i<GRID*GRID;i++){
+        const cell = document.createElement('button');
+        cell.className = 'cell chest';
+        cell.dataset.index = i;
+        const lid = document.createElement('div'); lid.className = 'lid chest-closed'; cell.appendChild(lid);
+        board.appendChild(cell);
+      }
+    }
+
+    function disableBoard(flag){
+      board.querySelectorAll('.cell').forEach(c=> c.classList.toggle('disabled', !!flag));
+    }
+
+    function newRound(){
+      if(balance < COST){
+        showModal('Saldo insuficiente', '<p>Recarga tu saldo para comenzar una nueva ronda.</p>'); lose(); return;
+      }
+      round++; pot = 0; moves = 0; roundOver = false; awaitingDecision = false; msg.textContent = '\u00A0';
+      hidden = makeDeck(); renderBoard(); updateHUD();
+      btnCash.disabled = true; btnCont.disabled = false; // puedes empezar a buscar
+      disableBoard(false);
+    }
+
+    function reveal(idx, cell){
+      if(roundOver || awaitingDecision) return;
+      if(balance < COST){ showModal('Saldo insuficiente', '<p>No tienes suficientes Bs para intentar. Pulsa <b>Plantarse y Cobrar</b> si tienes bote, o inicia una nueva ronda.</p>'); return; }
+
+      // cobrar intento
+      balance -= COST; moves++; updateHUD();
+      const item = hidden[idx]; if(!item) return;
+
+      // visual: abrir cofre
+      const lid = cell.querySelector('.lid'); if(lid) lid.remove();
+
+      let endNow = false;
+      if(item.t==='bomb'){
+        cell.innerHTML = '💣'; cell.classList.add('bomb','reveal','shake');
+        msg.textContent = '¡Bomba! Perdiste el bote de esta ronda.'; pot = 0; roundOver = true; disableBoard(true); btnCash.disabled = true; btnCont.disabled = true; lose();
+      } else if(item.t==='grand'){
+        cell.innerHTML = '💎'; cell.classList.add('treasure','reveal');
+        const win = pot + 500; // premio mayor base 500 Bs + bote
+        balance += win; pot = 0; roundOver = true; disableBoard(true); btnCash.disabled = true; btnCont.disabled = true; msg.textContent = `¡Gran Premio! +${win} Bs`; confetti({ particleCount: 180, spread: 80, origin: { y: 0.6 }}); winFx();
+      } else if(item.t==='minor'){
+        cell.innerHTML = '🪙'; cell.classList.add('coin','reveal');
+        pot += item.v; msg.textContent = `¡Monedas! +${item.v} Bs al bote`; btnCash.disabled = false; awaitingDecision = true; disableBoard(true); coin();
+      } else { // empty
+        cell.innerHTML = '⬛'; cell.classList.add('empty','reveal');
+        msg.textContent = 'Vacío… ¿Continuar o Plantarse?'; btnCash.disabled = pot<=0; awaitingDecision = true; disableBoard(true);
+      }
+
+      // marcar como revelado
+      hidden[idx] = null; // no se puede volver a usar
+    }
+
+    // ---------- Eventos ----------
+    board.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.cell');
+      if(!btn || btn.classList.contains('disabled')) return;
+      const idx = parseInt(btn.dataset.index,10);
+      reveal(idx, btn);
+    });
+
+    btnNew.addEventListener('click', newRound);
+    btnCont.addEventListener('click', ()=>{
+      if(roundOver) return; awaitingDecision = false; disableBoard(false); msg.textContent = 'Busca el tesoro…';
+    });
+    btnCash.addEventListener('click', ()=>{
+      if(roundOver) return; balance += pot; pot = 0; roundOver = true; disableBoard(true); btnCash.disabled = true; btnCont.disabled = true; updateHUD(); msg.textContent = '¡Ganancias cobradas!'; coin();
+    });
+
+    btnHelp.addEventListener('click', ()=>{
+      showModal('Cómo se juega', `
+        <div class="space-y-2 text-sm">
+          <p><b>Objetivo:</b> Encuentra el <b>Gran Premio</b> 💎 evitando las <b>bombas</b> 💣. Acumula <b>monedas</b> 🪙 en el <b>bote</b> y decide si <b>Continuar</b> o <b>Plantarte</b>.</p>
+          <ul class="list-disc pl-5">
+            <li>Tablero de <b>4x4</b> cofres.</li>
+            <li>Por ronda se esconden: <b>1 Gran Premio</b>, <b>2 Bombas</b>, <b>7 Monedas</b> y <b>6 Vacíos</b>.</li>
+            <li>Cada intento cuesta <b>25 Bs</b>.</li>
+            <li>Si revelas 💣 pierdes el <b>bote</b>; si revelas 💎 cobras <b>500 Bs + tu bote</b>.</li>
+            <li>Tras revelar 🪙 o ⬛, elige: <b>Continuar Buscando</b> o <b>Plantarse y Cobrar</b>.</li>
+          </ul>
+        </div>
+      `);
+    });
+
+    modalOk.addEventListener('click', ()=> modal.close());
+    modalClose.addEventListener('click', ()=> modal.close());
+
+    // ---------- Inicio ----------
+    updateHUD();
+    newRound();
+  });
+  </script>
+</body>
+</html>

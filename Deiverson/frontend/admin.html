@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Panel de Administrador | Apuesta200</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+
+    :root{
+      --bg: #0b1020; --bg-elev: #0f1529; --bg-card: #0a1322; --text: #e6f1ef; --muted: #9fb2b0; --primary: #10b981; --primary-600:#059669; --primary-700:#047857; --accent: #6366f1; --accent-700: #4338ca; --ring: rgba(16,185,129,.35); --success:#22c55e; --danger:#ef4444; --warning:#f59e0b;
+    }
+    html, body { height: 100%; }
+    body{
+      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: radial-gradient(1200px 800px at 20% -10%, rgba(99,102,241,.20) 0%, transparent 60%), radial-gradient(900px 700px at 110% 10%, rgba(16,185,129,.20) 0%, transparent 60%), linear-gradient(180deg, #0b1020 0%, #0f1529 100%);
+      color: var(--text);
+    }
+    .sidebar{ width: 18rem; background: linear-gradient(180deg, #0c1428 0%, #0a1020 100%); border-right: 1px solid rgba(255,255,255,.06);}
+    .container-main{ padding: 2rem; }
+    @media (min-width:1024px){ .container-main{ padding: 2.5rem; } }
+    .brand img{ height: 56px; filter: drop-shadow(0 10px 24px rgba(99,102,241,.25)); }
+    .brand .small{ font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+    .card{ background: var(--bg-card); border: 1px solid rgba(255,255,255,.06); border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .card h3{ font-weight: 700; }
+    .nav-link{ position: relative; display: flex; align-items: center; gap: .65rem; padding: .65rem .9rem; border-radius: .75rem; font-weight: 700; color: #cfe4df; transition: .2s ease; }
+    .nav-link:hover{ background: rgba(16,185,129,.08); color: #fff; }
+    .nav-link-active{ background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%); color: #0b1020; box-shadow: 0 8px 24px rgba(16,185,129,.28); }
+    .nav-link i{ width: 18px; height: 18px; }
+    .btn{ font-weight: 700; padding: .6rem 1rem; border-radius: .7rem; transition: transform .05s ease, box-shadow .2s ease, background .2s ease; }
+    .btn:active{ transform: translateY(1px); }
+    .btn-primary{ background: var(--primary); color: #062317; } .btn-primary:hover{ background: var(--primary-600); }
+    .btn-accent{ background: var(--accent); color: #0a0f20; } .btn-accent:hover{ background: var(--accent-700); }
+    .btn-success{ background: var(--success); color: #062317; }
+    .btn-danger{ background: var(--danger); } .btn-danger:hover{ filter: brightness(0.95); }
+    .btn-neutral{ background: #1f2937; } .btn-neutral:hover{ background: #2b3850; }
+    .btn-warning{ background: var(--warning); color: #111827; }
+    .input,.select{ width: 100%; background: #101a2d; color: #e8f5f2; border: 1px solid #1b2742; border-radius: .7rem; padding: .65rem .9rem; outline: none; transition: border-color .2s ease, box-shadow .2s ease; }
+    .input:focus,.select:focus{ border-color: var(--primary); box-shadow: 0 0 0 4px var(--ring); }
+    table{ width: 100%; } thead th{ color: #a6c7c2; font-weight: 600; }
+    tbody tr{ transition: background .15s ease; } tbody tr:hover{ background: rgba(99,102,241,.06); }
+    .badge{ font-weight: 700; border-radius: .5rem; padding: .25rem .5rem; }
+    .badge-green{ color: #34d399; } .badge-yellow{ color: #fbbf24; } .badge-red{ color: #f87171; } .badge-blue { color: #60a5fa; }
+    .ball,.letter-cell{ transition: all .25s ease; display:flex; align-items:center; justify-content:center; aspect-ratio: 1/1; font-size: clamp(.6rem,1.7vw,.8rem);}
+    .ball{ border-radius: 9999px; } .letter-cell{ border-radius: .5rem; color:#fff; }
+    .ball-drawn{ background: var(--accent); color:#0b1020; transform: scale(1.05); }
+
+    .notification-badge {
+      margin-left: auto;
+      min-width: 22px;
+      height: 22px;
+      padding: 0 6px;
+      border-radius: 9999px;
+      background-color: var(--danger);
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transform: scale(0);
+      transition: transform 0.2s ease-out;
+    }
+    .notification-badge:not(:empty) {
+      transform: scale(1);
+    }
+  </style>
+</head>
+
+<body class="min-h-screen">
+  
+  <div id="admin-main-content" class="flex hidden">
+    <aside class="sidebar p-6 min-h-screen flex flex-col">
+      <div class="brand text-center mb-6">
+        <img src="img/logo.webp" alt="Apuesta200"/>
+        <div class="small mt-2">Panel de Administración</div>
+      </div>
+
+      <nav id="sidebar-nav" class="space-y-2">
+        <a href="#" id="nav-dashboard" class="nav-link nav-link-active">
+          <i data-lucide="layout-dashboard"></i><span>Dashboard</span>
+        </a>
+        <a href="#" id="nav-tickets" class="nav-link">
+          <i data-lucide="ticket"></i><span>Tickets</span>
+          <span class="notification-badge" id="badge-tickets"></span>
+        </a>
+        <a href="#" id="nav-juegos" class="nav-link">
+          <i data-lucide="gamepad-2"></i><span>Juegos</span>
+          <span class="notification-badge" id="badge-juegos"></span>
+        </a>
+        <a href="#" id="nav-sorteo" class="nav-link">
+          <i data-lucide="dice-3"></i><span>Sorteos</span>
+        </a>
+        <a href="#" id="nav-ganador" class="nav-link">
+          <i data-lucide="medal"></i><span>Ganador</span>
+        </a>
+        <a href="#" id="nav-resultados" class="nav-link">
+          <i data-lucide="megaphone"></i><span>Resultados</span>
+        </a>
+        <a href="#" id="nav-reportes" class="nav-link">
+          <i data-lucide="bar-chart-3"></i><span>Reportes</span>
+        </a>
+        <a href="#" id="nav-pagos" class="nav-link">
+          <i data-lucide="credit-card"></i><span>Pagos</span>
+          <span class="notification-badge" id="badge-pagos"></span>
+        </a>
+
+
+        <!-- Esto se activa mas adelante aun esta simple esta en fase de desarrollo falta completar y mejorar aun mas  -->
+
+        
+        <!-- <a href="salas-admin.html" target="_blank" class="nav-link">
+          <i data-lucide="key-round"></i><span>Salas Virtuales</span>
+        </a> -->
+
+
+      </nav>
+
+      <div class="mt-auto pt-6">
+        <button id="logout-button-sidebar" class="btn btn-danger w-full flex items-center justify-center gap-2">
+          <i data-lucide="log-out"></i> Cerrar Sesión
+        </button>
+      </div>
+    </aside>
+
+    <main class="flex-1 container-main">
+
+
+      <div id="section-dashboard">
+        <header class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-black tracking-tight">Dashboard</h2>
+            <div class="text-right">
+                <p id="welcome-message" class="text-lg font-semibold text-gray-300">Bienvenido de nuevo</p>
+                <p class="text-sm text-gray-500">Resumen de actividad reciente.</p>
+            </div>
+        </header>
+        
+        <div class="mb-8">
+            <h3 class="text-xl font-bold mb-4 text-gray-300">Ingresos Brutos (Total Vendido)</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="card p-6">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-emerald-500/20 p-3 rounded-lg"><i data-lucide="arrow-down-right" class="w-6 h-6 text-emerald-400"></i></div>
+                        <div>
+                            <h3 class="text-lg font-bold text-emerald-400">Ingresos de Hoy</h3>
+                            <p id="ingresos-hoy" class="text-3xl font-black">0.00 Bs</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card p-6">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-sky-500/20 p-3 rounded-lg"><i data-lucide="calendar-days" class="w-6 h-6 text-sky-400"></i></div>
+                        <div>
+                            <h3 class="text-lg font-bold text-sky-400">Ingresos de la Semana</h3>
+                            <p id="ingresos-semanales" class="text-3xl font-black">0.00 Bs</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card p-6">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-amber-500/20 p-3 rounded-lg"><i data-lucide="calendar-check" class="w-6 h-6 text-amber-400"></i></div>
+                        <div>
+                            <h3 class="text-lg font-bold text-amber-400">Ingresos del Mes</h3>
+                            <p id="ingresos-mensuales" class="text-3xl font-black">0.00 Bs</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <h3 class="text-xl font-bold mb-4 text-gray-300">Ganancias Netas (Ingresos - Premios)</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="card p-6">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-emerald-500/20 p-3 rounded-lg"><i data-lucide="wallet" class="w-6 h-6 text-emerald-400"></i></div>
+                        <div>
+                            <h3 class="text-lg font-bold text-emerald-400">Ganancias de Hoy</h3>
+                            <p id="ganancias-hoy" class="text-3xl font-black">0.00 Bs</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card p-6">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-sky-500/20 p-3 rounded-lg"><i data-lucide="piggy-bank" class="w-6 h-6 text-sky-400"></i></div>
+                        <div>
+                            <h3 class="text-lg font-bold text-sky-400">Ganancias de la Semana</h3>
+                            <p id="ganancias-semana" class="text-3xl font-black">0.00 Bs</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card p-6">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-amber-500/20 p-3 rounded-lg"><i data-lucide="landmark" class="w-6 h-6 text-amber-400"></i></div>
+                        <div>
+                            <h3 class="text-lg font-bold text-amber-400">Ganancias del Mes</h3>
+                            <p id="ganancias-mes" class="text-3xl font-black">0.00 Bs</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+      </div>
+
+      <div id="section-tickets" class="hidden">
+        <header class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-black tracking-tight">Gestión de Tickets</h2>
+        </header>
+        <div class="card p-6">
+          <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+            <h3 class="text-xl font-bold">Tickets Pendientes de Imprimir</h3>
+
+            <div class="relative w-full md:w-auto flex items-center bg-[#0e1a33] border border-[#1b2742] rounded-xl overflow-hidden">
+              <i data-lucide="search" class="w-5 h-5 absolute left-3 text-[#8aa3bd]"></i>
+              <input type="text" id="ticket-search-input" class="input bg-transparent pl-10 border-0" placeholder="Buscar y presionar Enter..." />
+              <button id="ticket-search-button" class="btn btn-primary rounded-none flex items-center gap-2">
+                <i data-lucide="scan-search"></i> Buscar
+              </button>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button id="refresh-button" class="btn btn-neutral flex items-center gap-2"><i data-lucide="refresh-ccw"></i> Actualizar</button>
+              <button id="create-ticket-button" class="btn btn-accent flex items-center gap-2"><i data-lucide="plus"></i> Crear Ticket</button>
+            </div>
+          </div>
+
+          <div class="overflow-y-auto max-h-[500px] rounded-lg">
+            <table class="text-left table-fixed">
+              <thead class="sticky top-0 bg-[#0c1528]/80 backdrop-blur border-b border-[#1b2742]">
+                <tr>
+                  <th class="p-3 w-[10%]">ID Ticket</th>
+                  <th class="p-3 w-[15%]">Usuario</th>
+                  <th class="p-3 w-[20%]">Columnas</th>
+                  <th class="p-3 w-[10%]">Monto</th>
+                  <th class="p-3 w-[15%]">Método de Pago</th>
+                  <th class="p-3 w-[15%]">Fecha</th>
+                  <th class="p-3 w-[10%] text-center">Estado</th>
+                  <th class="p-3 w-[15%] text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tickets-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <div id="section-juegos" class="hidden">
+          <header class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-black tracking-tight">Gestión de Partidas: Bingo</h2>
+            <button id="refresh-bingo-list" class="btn btn-primary flex items-center gap-2">
+              <i data-lucide="refresh-ccw"></i> Actualizar Lista
+            </button>
+          </header>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-8">
+              <div class="card p-6">
+                <div class="flex justify-between items-center">
+                  <div>
+                    <h3 class="text-xl font-bold">Bingo en Proceso</h3>
+                    <p class="text-[#9fb2b0]">Controla y visualiza la partida que se está jugando actualmente.</p>
+                    <div class="mt-2 flex items-center gap-3">
+                      <span class="text-xs text-[#9fb2b0]">Tiempo restante:</span>
+                      <p id="game-status-display" class="text-2xl font-extrabold text-emerald-300">--:--</p>
+                    </div>
+                  </div>
+                  <button id="open-live-game-modal" class="btn btn-accent flex items-center gap-2">
+                    <i data-lucide="monitor-play"></i> Ver y Administrar
+                  </button>
+                </div>
+                <div class="mt-4 pt-4 border-t border-[#1b2742]">
+                  <h4 class="font-bold text-sm text-[#9fb2b0] mb-2">Estado de Columnas:</h4>
+                  <div id="main-columns-grid" class="grid grid-cols-5 sm:grid-cols-8 lg:grid-cols-15 gap-2 text-center"></div>
+                </div>
+              </div>
+
+              <div class="card p-6 flex flex-col max-h-[60vh]">
+                <h3 class="text-xl font-bold mb-4 flex-shrink-0">Historial de Partidas</h3>
+                <div class="flex-grow overflow-y-auto rounded-lg">
+                  <table class="text-left w-full">
+                    <thead class="sticky top-0 bg-[#0c1528]/80 backdrop-blur border-b border-[#1b2742]">
+                      <tr>
+                        <th class="p-3 w-[15%]">ID Partida</th>
+                        <th class="p-3 w-[25%]">Fecha</th>
+                        <th class="p-3 w-[15%]">Ganador</th>
+                        <th class="p-3 w-[15%]">Estado</th>
+                        <th class="p-3 w-[15%]">Disp.</th>
+                        <th class="p-3 w-[15%]">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody id="bingo-history-table-body"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="lg:col-span-1">
+              <div class="card p-6">
+                  <h3 class="text-xl font-bold mb-4">Controles Avanzados</h3>
+                  <div class="space-y-6">
+                      <div>
+                          <h4 class="font-bold text-sm text-yellow-300">Control de Conteo "Agotado"</h4>
+                          <p class="text-xs text-[#9fb2b0] mb-2">Establece los segundos de espera antes de un nuevo juego cuando se venden todas las columnas.</p>
+                          <div class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <input id="sold-out-interval-input" type="number" value="600" class="input w-24">
+                                <span class="text-sm text-[#9fb2b0]">segundos</span>
+                            </div>
+                            <button id="set-sold-out-interval-btn" class="btn btn-warning w-full">Guardar</button>
+                          </div>
+                          </div>
+                      <div id="sold-out-status-display" class="hidden bg-red-900/50 border border-red-500/50 p-3 rounded-lg text-center">
+                          <p class="font-bold text-red-300 animate-pulse">¡COLUMNAS AGOTADAS!</p>
+                          <p class="text-xs text-red-200">El próximo juego comenzará en:</p>
+                          <p id="sold-out-countdown-display" class="text-2xl font-bold"></p>
+                      </div>
+                      <div>
+                          <h4 class="font-bold text-sm text-red-400">Acción Inmediata</h4>
+                          <p class="text-xs text-[#9fb2b0] mb-2">Fuerza el inicio de un nuevo juego inmediatamente, cancelando cualquier conteo.</p>
+                          <button id="force-start-next-game-btn" class="btn btn-danger w-full">Forzar Inicio de Juego</button>
+                      </div>
+                  </div>
+              </div>
+            </div>
+
+          </div>
+      </div>
+
+      <div id="section-ganador" class="hidden">
+        <header class="flex justify-between items-center mb-8">
+          <h2 class="text-3xl font-black tracking-tight">Panel de Ganadores</h2>
+        </header>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div class="card p-6">
+            <h3 class="text-xl font-bold text-emerald-400 border-b border-[#1b2742] pb-3 mb-4">Declarar un Nuevo Ganador</h3>
+            <div class="space-y-4">
+              <div>
+                <label for="winner-name-input" class="block text-sm font-semibold text-[#b9d4d0] mb-1">Nombre del Ganador</label>
+                <input type="text" id="winner-name-input" class="input text-center text-xl font-black" placeholder="Nombre del ganador" />
+              </div>
+              <div>
+                <label for="winner-game-id-input" class="block text-sm font-semibold text-[#b9d4d0] mb-1">ID de la Partida Jugada</label>
+                <input type="number" id="winner-game-id-input" class="input text-center text-xl font-black" placeholder="ID del juego que ganó" />
+              </div>
+               <div>
+                <label for="winner-ticket-id-input" class="block text-sm font-semibold text-[#b9d4d0] mb-1">ID del Ticket Ganador</label>
+                <input type="number" id="winner-ticket-id-input" class="input text-center text-xl font-black" placeholder="ID del ticket del ganador" />
+              </div>
+              <div>
+                <label for="winner-column-input" class="block text-sm font-semibold text-[#b9d4d0] mb-1">Columna Ganadora (1-15)</label>
+                <input type="number" id="winner-column-input" min="1" max="15" class="input text-center text-xl font-black" placeholder="Marcar la columna que ganó" />
+              </div>
+              <button id="declare-winner-button-main" class="btn btn-success w-full text-xl mt-2 flex items-center justify-center gap-2">
+                <i data-lucide="trophy"></i> Añadir al Historial
+              </button>
+              <p id="winner-status" class="text-center text-[#9fb2b0] mt-3 h-5"></p>
+            </div>
+          </div>
+          <div class="card p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-bold">Historial de Ganadores</h3>
+              <button id="refresh-winner-history" class="btn btn-neutral flex items-center gap-2">
+                <i data-lucide="refresh-ccw"></i> Actualizar
+              </button>
+            </div>
+            <div class="overflow-x-auto max-h-96 rounded-lg">
+              <table class="text-left">
+                <thead class="sticky top-0 bg-[#0c1528]/80 backdrop-blur border-b border-[#1b2742]">
+                  <tr>
+                    <th class="p-3">Nombre</th>
+                    <th class="p-3">ID Partida</th>
+                    <th class="p-3">Columna</th>
+                    <th class="p-3">Fecha</th>
+                    <th class="p-3 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="winner-history-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-ganador-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-[#0e1730] border border-[#1b2742] w-full max-w-lg rounded-2xl p-6 relative shadow-xl">
+          <h2 class="text-2xl font-bold text-center mb-6">Detalles del Ganador</h2>
+          <div id="view-ganador-content" class="space-y-3 text-lg"></div>
+          <button id="close-view-ganador-modal" class="btn btn-neutral w-full mt-6 flex items-center justify-center gap-2"><i data-lucide="x"></i> Cerrar</button>
+        </div>
+      </div>
+
+      <div id="edit-ganador-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-[#0e1730] border border-[#1b2742] w-full max-w-lg rounded-2xl p-6 relative shadow-xl">
+          <h2 class="text-2xl font-bold text-center mb-6">Modificar Ganador</h2>
+          <form id="edit-ganador-form" class="space-y-4">
+            <input type="hidden" id="edit-ganador-id" />
+            <div><label for="edit-ganador-name" class="block text-sm font-medium text-[#b9d4d0] mb-1">Nombre</label><input type="text" id="edit-ganador-name" required class="input"></div>
+            <div><label for="edit-ganador-partida" class="block text-sm font-medium text-[#b9d4d0] mb-1">ID Partida</label><input type="number" id="edit-ganador-partida" required class="input"></div>
+            <div><label for="edit-ganador-columna" class="block text-sm font-medium text-[#b9d4d0] mb-1">Columna</label><input type="number" id="edit-ganador-columna" required min="1" max="15" class="input"></div>
+            <div class="flex justify-end gap-3 mt-6">
+              <button type="button" id="cancel-edit-ganador-modal" class="btn btn-neutral flex items-center gap-2"><i data-lucide="x"></i> Cancelar</button>
+              <button type="submit" class="btn btn-primary flex items-center gap-2"><i data-lucide="save"></i> Guardar Cambios</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div id="section-resultados" class="hidden">
+        <header class="flex justify-between items-center mb-8"><h2 class="text-3xl font-black tracking-tight">Gestión de Resultados Públicos</h2></header>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div class="card p-6">
+            <h3 class="text-xl font-bold text-emerald-400 border-b border-[#1b2742] pb-3 mb-4">Crear Borrador de Resultado</h3>
+            <form id="create-resultado-form" class="space-y-4">
+              <div><label for="resultado-partida-id" class="block text-sm font-semibold text-[#b9d4d0] mb-1">ID de la Partida</label><input type="number" id="resultado-partida-id" required class="input text-xl font-black"></div>
+              <div><label for="resultado-columna" class="block text-sm font-semibold text-[#b9d4d0] mb-1">Columna Ganadora (1-15)</label><input type="number" id="resultado-columna" required min="1" max="15" class="input text-xl font-black"></div>
+              <div><label for="resultado-fecha" class="block text-sm font-semibold text-[#b9d4d0] mb-1">Fecha y Hora del Resultado</label><input type="datetime-local" id="resultado-fecha" required class="input"></div>
+              <button type="submit" class="btn btn-primary w-full text-xl mt-2 flex items-center justify-center gap-2"><i data-lucide="save-all"></i> Guardar en Historial</button>
+            </form>
+          </div>
+          <div class="card p-6">
+            <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold">Historial de Resultados</h3><button id="refresh-resultados-history" class="btn btn-neutral flex items-center gap-2"><i data-lucide="refresh-ccw"></i> Actualizar</button></div>
+            <div class="overflow-x-auto max-h-[500px] rounded-lg">
+              <table class="text-left">
+                <thead class="sticky top-0 bg-[#0c1528]/80 backdrop-blur border-b border-[#1b2742]">
+                  <tr><th class="p-3">ID Partida</th><th class="p-3">Columna</th><th class="p-3">Estado</th><th class="p-3 text-center">Acciones</th></tr>
+                </thead>
+                <tbody id="resultados-history-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-resultado-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+        <div class="bg-[#0e1730] w-full max-w-lg rounded-2xl p-6 relative border border-[#1b2742]">
+          <h2 class="text-2xl font-bold text-center mb-6">Detalles del Resultado</h2>
+          <div id="view-resultado-content" class="space-y-3 text-lg"></div>
+          <button id="close-view-resultado-modal" class="btn btn-neutral w-full mt-6 flex items-center justify-center gap-2"><i data-lucide="x"></i> Cerrar</button>
+        </div>
+      </div>
+
+      <div id="edit-resultado-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+        <div class="bg-[#0e1730] w-full max-w-lg rounded-2xl p-6 relative border border-[#1b2742]">
+          <h2 class="text-2xl font-bold text-center mb-6">Modificar Resultado</h2>
+          <form id="edit-resultado-form" class="space-y-4">
+            <input type="hidden" id="edit-resultado-id" />
+            <div><label for="edit-resultado-partida" class="block text-sm font-medium">ID Partida</label><input type="number" id="edit-resultado-partida" required class="input"></div>
+            <div><label for="edit-resultado-columna" class="block text-sm font-medium">Columna</label><input type="number" id="edit-resultado-columna" required min="1" max="15" class="input"></div>
+            <div><label for="edit-resultado-fecha" class="block text-sm font-medium">Fecha</label><input type="datetime-local" id="edit-resultado-fecha" required class="input"></div>
+            <div class="flex justify-end gap-3 mt-6">
+              <button type="button" id="cancel-edit-resultado-modal" class="btn btn-neutral flex items-center gap-2"><i data-lucide="x"></i> Cancelar</button>
+              <button type="submit" class="btn btn-primary flex items-center gap-2"><i data-lucide="save"></i> Guardar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div id="actions-resultado-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-[#0e1730] border border-[#1b2742] w-full max-w-sm rounded-2xl p-6 relative shadow-xl">
+          <h2 id="actions-modal-title" class="text-2xl font-bold text-center mb-6">Acciones para el Resultado</h2>
+          <div id="actions-modal-content" class="flex flex-col gap-3"></div>
+          <button id="close-actions-resultado-modal" class="btn btn-neutral w-full mt-6 flex items-center justify-center gap-2"><i data-lucide="x"></i> Cerrar</button>
+        </div>
+      </div>
+
+      <div id="section-pagos" class="hidden">
+        <header class="flex justify-between items-center mb-8">
+          <h2 class="text-3xl font-black tracking-tight">Gestión de Pagos</h2>
+        </header>
+
+        <div class="card p-6 flex flex-col h-[75vh]">
+          <div class="flex-shrink-0">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+              
+              <div class="relative w-full md:w-1/3">
+                <input type="text" id="payment-search" class="input pl-10" placeholder="Buscar por ID de Ticket o Partida..." />
+                <i data-lucide="search" class="w-5 h-5 absolute left-3 top-3 text-[#8aa3bd]"></i>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <label for="payment-date-filter" class="font-semibold text-sm">Filtrar por Fecha:</label>
+                <input type="date" id="payment-date-filter" class="input">
+              </div>
+
+              <div class="flex items-center gap-3">
+                <label for="payment-date-sort" class="font-semibold text-sm">Ordenar por:</label>
+                <select id="payment-date-sort" class="select">
+                  <option value="desc">Más Recientes Primero</option>
+                  <option value="asc">Más Antiguos Primero</option>
+                </select>
+              </div>
+
+            </div>
+            </div>
+
+          <div class="flex-grow overflow-y-auto rounded-lg">
+            <table class="text-left w-full">
+              <thead class="bg-[#0c1528]/80 backdrop-blur border-b border-[#1b2742] sticky top-0">
+                <tr>
+                  <th class="p-3 w-[8%]">ID Ticket</th>
+                  <th class="p-3 w-[12%]">Usuario</th>
+                  <th class="p-3 w-[12%]">Referencia</th>
+                  <th class="p-3 w-[12%]">Banco</th>
+                  <th class="p-3 w-[10%]">Monto</th>
+                  <th class="p-3 w-[12%]">Método</th>
+                  <th class="p-3 w-[15%]">Fecha y Hora</th>
+                  <th class="p-3 w-[10%]">Estado</th>
+                  <th class="p-3 w-[15%] text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="payments-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+
+      <div id="section-reportes" class="hidden">
+
+        <header class="flex justify-between items-center mb-8">
+          <h2 class="text-3xl font-black tracking-tight">Reportes y Cierre de Caja</h2>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          
+          <div class="lg:col-span-3 card p-6">
+            <h3 class="text-xl font-bold border-b border-[#1b2742] pb-3 mb-4 text-accent">Cierre de Caja Profesional</h3>
+            <p class="text-[#9fb2b0] mb-4">Calcula la ganancia neta en tiempo real y ejecuta un cierre diario para guardarlo en el historial de forma permanente.</p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 mb-6">
+              <button id="calculate-cierre-button" class="btn btn-primary w-full flex items-center justify-center gap-2">
+                <i data-lucide="refresh-cw"></i> Actualizar Vista
+              </button>
+              <button id="execute-cierre-button" class="btn btn-danger w-full flex items-center justify-center gap-2">
+                <i data-lucide="save"></i> Ejecutar Cierre Diario
+              </button>
+            </div>
+
+            <div class="space-y-4">
+              <div class="bg-[#0b152c] p-4 rounded-lg">
+                <p class="text-lg font-bold text-white">Hoy (No Cerrado)</p>
+                <div class="grid grid-cols-3 gap-2 text-center mt-2">
+                  <div><p class="text-xs text-[#9fb2b0]">Ingresos Brutos</p><p id="cierre-hoy-ingresos" class="font-extrabold text-emerald-300 text-lg">-- Bs</p></div>
+                  <div><p class="text-xs text-[#9fb2b0]">Premios Pagados</p><p id="cierre-hoy-premios" class="font-extrabold text-red-400 text-lg">-- Bs</p></div>
+                  <div><p class="text-xs text-white">Ganancia Neta</p><p id="cierre-hoy-ganancia" class="font-extrabold text-yellow-400 text-xl">-- Bs</p></div>
+                </div>
+              </div>
+              <div class="bg-[#0b152c] p-4 rounded-lg">
+  <p class="text-lg font-bold text-white">Hoy (Vista Previa)</p> <div class="grid grid-cols-3 gap-2 text-center mt-2">
+    <div><p class="text-xs text-[#9fb2b0]">Ingresos Brutos</p><p id="cierre-hoy-ingresos" class="font-extrabold text-emerald-300 text-lg">-- Bs</p></div>
+    <div><p class="text-xs text-[#9fb2b0]">Premios Pagados</p><p id="cierre-hoy-premios" class="font-extrabold text-red-400 text-lg">-- Bs</p></div>
+    <div><p class="text-xs text-white">Ganancia Neta</p><p id="cierre-hoy-ganancia" class="font-extrabold text-yellow-400 text-xl">-- Bs</p></div>
+  </div>
+</div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-2 space-y-8">
+            <div class="card p-6">
+              <h3 class="text-xl font-bold border-b border-[#1b2742] pb-3 mb-4 text-emerald-400">Historial de Cierres</h3>
+              <div id="cierre-history-container" class="space-y-2 max-h-60 overflow-y-auto"></div>
+            </div>
+            
+            <div class="card p-6">
+              <h3 class="text-xl font-bold border-b border-[#1b2742] pb-3 mb-4 text-emerald-400">Reportes Descargables</h3>
+              <p class="text-[#9fb2b0] mb-6">Genera un reporte detallado de cualquier sección del sistema.</p>
+              <button id="open-report-modal-button" class="btn btn-success w-full text-lg flex items-center justify-center gap-2">
+                  <i data-lucide="download"></i> Generar Reporte
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="report-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-[#0e1730] border border-[#1b2742] w-full max-w-md rounded-2xl p-6 relative shadow-xl">
+          <h2 class="text-2xl font-bold text-center mb-6">Generador de Reportes</h2>
+          
+          <div class="space-y-4">
+            <div>
+              <label for="report-type-select" class="block text-sm font-medium text-[#b9d4d0] mb-1">Selecciona el tipo de reporte:</label>
+              <select id="report-type-select" class="select">
+                <option value="tickets">Tickets (Todos)</option>
+                <option value="pagos">Pagos Móviles</option>
+                <option value="juegos">Juegos (Historial de Partidas)</option>
+                <option value="ganadores">Ganadores</option>
+                <option value="cierres">Cierres de Caja</option>
+              </select>
+            </div>
+
+            <p class="text-sm font-medium text-center text-[#b9d4d0] pt-4">Elige el formato de descarga:</p>
+            <div class="flex gap-4">
+              <button id="download-excel-button" class="btn btn-success w-full flex items-center justify-center gap-2">
+                <i data-lucide="file-spreadsheet"></i> Descargar Excel
+              </button>
+              <button id="download-pdf-button" class="btn btn-danger w-full flex items-center justify-center gap-2">
+                <i data-lucide="file-text"></i> Descargar PDF
+              </button>
+            </div>
+          </div>
+
+          <button id="close-report-modal-button" class="btn btn-neutral w-full mt-8 flex items-center justify-center gap-2"><i data-lucide="x"></i> Cancelar</button>
+        </div>
+      </div>
+
+      <div id="section-sessions" class="hidden">
+        <header class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-black tracking-tight">Gestión de Salas Privadas</h2>
+        </header>
+        
+        <div class="card p-6 max-w-lg mx-auto">
+            <h3 class="text-xl font-bold border-b border-[#1b2742] pb-3 mb-4 text-accent">Crear Código de Acceso</h3>
+            <form id="create-session-form" class="space-y-4">
+                <div>
+                    <label for="initial-credits-input" class="block text-sm font-semibold text-[#b9d4d0] mb-1">Créditos a Cargar (Bs)</label>
+                    <input type="number" id="initial-credits-input" min="1" step="0.01" required class="input text-center text-3xl font-black text-yellow-400" placeholder="Ej: 500.00" />
+                </div>
+                
+                <button type="submit" id="generate-code-button" class="btn btn-accent w-full text-xl mt-4 flex items-center justify-center gap-2">
+                    <i data-lucide="shield-check"></i> Generar Código Único
+                </button>
+            </form>
+        </div>
+        
+        <div id="session-result-card" class="card p-6 max-w-lg mx-auto mt-6 hidden">
+            <h3 class="text-xl font-bold text-emerald-400 mb-4">Código Generado</h3>
+            <p class="text-[#9fb2b0] mb-2">Instruye al jugador para que use este código en la página principal.</p>
+            <div class="bg-[#0b152c] p-4 rounded-lg text-center border-dashed border-emerald-500/50 border-2">
+                <p class="text-sm font-semibold text-emerald-300">CÓDIGO DE SESIÓN</p>
+                <p id="generated-code-display" class="text-5xl font-black text-white tracking-widest mt-1">--</p>
+            </div>
+            <p id="generated-credits-display" class="text-center mt-3 text-lg font-bold text-yellow-400">Créditos: 0.00 Bs</p>
+        </div>
+      </div>
+
+      <div id="section-sorteo" class="hidden">
+          <header class="flex justify-between items-center mb-8">
+              <h2 class="text-3xl font-black tracking-tight">Sorteo Manual</h2>
+          </header>
+        
+          <div class="flex justify-center items-center mt-12">
+              <a href="/sorteo/caller.html" target="_blank" rel="noopener noreferrer" 
+                 class="game-card rounded-2xl flex flex-col items-center justify-center text-center p-4 transform transition-transform hover:scale-105" 
+                 style="width: 250px; height: 250px; background: rgba(22, 22, 22, 0.4); border: 1px solid rgba(255, 255, 255, 0.15);">
+
+                  <img src="img/icono.webp" alt="Sorteo Columna Ganadora" class="w-32 h-32">
+
+                  <h3 class="text-xl font-bold text-yellow-400 mt-4">Lanzar Sorteo</h3>
+              </a>
+          </div>
+      </div>
+
+    </main>
+  </div>
+<div id="login-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 hidden flex items-center justify-center transition-opacity duration-300">
+    <div class="bg-[#111827] rounded-xl shadow-2xl p-6 w-full max-w-sm transform transition-all duration-300 scale-100">
+        <h2 class="text-2xl font-bold text-yellow-400 mb-4 text-center">Acceso al Panel Admin</h2>
+        <p class="text-gray-300 mb-6 text-center">Por favor, inicia sesión para continuar.</p>
+        
+        <form id="admin-login-form"> 
+            <div class="mb-4">
+                <label for="admin-username" class="block text-sm font-medium text-gray-400 mb-1">Usuario</label>
+                <input type="text" id="admin-username" name="username" required 
+                       class="w-full px-3 py-2 border border-gray-700 bg-[#1f2937] text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            </div>
+            <div class="mb-6">
+                <label for="admin-password" class="block text-sm font-medium text-gray-400 mb-1">Contraseña</label>
+                <input type="password" id="admin-password" name="password" required 
+                       class="w-full px-3 py-2 border border-gray-700 bg-[#1f2937] text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            </div>
+            <button type="submit" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 rounded-lg transition duration-200">
+                Iniciar Sesión
+            </button>
+        </form>
+    </div>
+</div>
+  <button id="logout-button" style="display: none;">Cerrar Sesión</button>
+
+
+  <div id="view-ticket-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-[#0e1730] border border-[#1b2742] w-full max-w-lg rounded-2xl p-6 relative shadow-xl">
+      <h2 class="text-2xl font-bold text-center mb-6">Detalles del Ticket</h2>
+      <div id="view-ticket-content" class="space-y-3"></div>
+      <button id="close-view-ticket-modal" class="btn btn-neutral w-full mt-6 flex items-center justify-center gap-2"><i data-lucide="x"></i> Cerrar</button>
+    </div>
+  </div>
+
+  <div id="edit-ticket-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-[#0e1730] border border-[#1b2742] w-full max-w-lg rounded-2xl p-6 relative shadow-xl">
+      <h2 class="text-2xl font-bold text-center mb-6">Modificar Ticket</h2>
+      <form id="edit-ticket-form" class="space-y-4">
+        <input type="hidden" id="edit-ticket-id" />
+        <div><label for="edit-columns" class="block text-sm font-medium text-[#b9d4d0] mb-1">Columnas</label><input type="text" id="edit-columns" class="input"></div>
+        <div><label for="edit-payment" class="block text-sm font-medium text-[#b9d4d0] mb-1">Método de Pago</label><select id="edit-payment" class="select"><option>Pago Móvil</option><option>Punto de Venta</option><option>Efectivo</option></select></div>
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" id="cancel-edit-ticket-modal" class="btn btn-neutral flex items-center gap-2"><i data-lucide="x"></i> Cancelar</button>
+          <button type="submit" class="btn btn-primary flex items-center gap-2"><i data-lucide="save"></i> Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="payment-details-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-[#0e1730] border border-[#1b2742] w-full max-w-lg rounded-2xl p-6 relative shadow-xl">
+      <button id="close-payment-details-modal" class="absolute top-4 right-4 text-gray-300 hover:text-white">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+      <h2 class="text-2xl font-bold text-center mb-6">Detalles del Pago</h2>
+      <div id="payment-details-content" class="space-y-2 text-lg border-t border-b border-[#1b2742] py-4">
+        </div>
+      <div id="payment-details-actions" class="flex justify-end gap-3 mt-8">
+        </div>
+    </div>
+  </div>
+
+
+  <div id="live-game-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-[#0e1730] border border-[#1b2742] w-full max-w-3xl rounded-2xl p-6 relative shadow-xl flex flex-col max-h-[90vh]">
+      <div class="flex justify-between items-center mb-4 pb-4 border-b border-[#1b2742]">
+        <h2 class="text-2xl font-bold text-white">Gestionar Partida Actual</h2>
+        <button id="close-live-game-modal" class="text-gray-300 hover:text-white"><i data-lucide="x" class="w-8 h-8"></i></button>
+      </div>
+      <div class="overflow-y-auto">
+        <div class="text-center mb-6">
+          <h3 class="text-[#9fb2b0]">Tiempo restante:</h3>
+          <p id="modal-countdown-timer" class="text-4xl font-extrabold text-emerald-300">--:--</p>
+          <p id="modal-game-status-message" class="text-xl font-bold mt-2 text-yellow-400 h-6">&nbsp;</p>
+        </div>
+        <div class="mb-6">
+          <h3 class="font-bold text-lg text-center mb-3">Tablero de Columnas</h3>
+          <p class="text-xs text-center text-[#9fb2b0] mb-3">Haz clic en una columna para bloquearla o liberarla.</p>
+          <div id="modal-columns-grid" class="grid grid-cols-5 sm:grid-cols-8 lg:grid-cols-15 gap-2 text-center"></div>
+        </div>
+        <div class="card p-4 space-y-4">
+            <h3 class="font-bold text-lg text-center">Controles de Administrador</h3>
+                  
+            <p class="text-xs text-center text-yellow-300 bg-yellow-900/50 p-2 rounded-md">
+              <b>Recordatorio:</b> La ganancia se calcula a partir de la 11ª columna vendida. Partidas con 10 o menos ventas no generan ganancia neta.
+            </p>
+  
+            </div>
+          <button id="force-reset-button" class="btn btn-danger w-full flex items-center justify-center gap-2">
+            <i data-lucide="octagon-alert"></i> Detener Juego
+          </button>
+          <button id="resume-game-button" class="btn btn-primary w-full flex items-center justify-center gap-2">
+            <i data-lucide="play"></i> Reanudar Contador
+          </button>
+        </div>
+        <div class="card p-4 space-y-4 mt-4 border-t-2 border-emerald-500/40">
+          <h3 class="font-bold text-lg text-center text-emerald-300">Ajustar Temporizador</h3>
+          <div class="flex items-center justify-center gap-2">
+            <label for="timer-minutes-input" class="font-semibold">Establecer en:</label>
+            <input type="number" id="timer-minutes-input" min="1" class="input w-24 text-center" placeholder="Ej: 10">
+            <label class="font-semibold">minutos</label>
+            <button id="set-timer-button" class="btn btn-warning flex items-center gap-2">
+              <i data-lucide="timer-reset"></i> Ajustar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="history-game-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-[#0e1730] border border-[#1b2742] w-full max-w-2xl rounded-2xl p-6 relative shadow-xl flex flex-col max-h-[90vh]">
+      <div class="flex justify-between items-center mb-4 pb-4 border-b border-[#1b2742]">
+        <h2 class="text-2xl font-bold text-white">Detalles de Partida Jugada</h2>
+        <button id="close-history-game-modal" class="text-gray-300 hover:text-white"><i data-lucide="x" class="w-8 h-8"></i></button>
+      </div>
+      <div class="overflow-y-auto">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mb-6 bg-[#0b152c] p-4 rounded-lg">
+          <div><h4 class="text-sm text-[#9fb2b0] font-bold">ID Partida</h4><p id="history-modal-id" class="font-mono text-lg"></p></div>
+          <div><h4 class="text-sm text-[#9fb2b0] font-bold">Fecha</h4><p id="history-modal-date" class="text-lg"></p></div>
+          <div><h4 class="text-sm text-[#9fb2b0] font-bold">Estado</h4><p id="history-modal-status" class="font-bold text-lg"></p></div>
+          <div><h4 class="text-sm text-[#9fb2b0] font-bold">Ganador</h4><p id="history-modal-winner" class="text-lg"></p></div>
+        </div>
+        <div class="mb-6">
+          <h3 class="font-bold text-lg text-center mb-3">Resultado de Columnas</h3>
+          <div class="flex justify-center items-center gap-4 text-xs mb-3">
+            <span class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-red-600"></div>Comprada</span>
+            <span class="flex items-center gap-2"><div class="w-4 h-4 rounded bg-gray-600"></div>Disponible</span>
+          </div>
+          <div id="history-modal-columns-grid" class="grid grid-cols-5 sm:grid-cols-8 lg:grid-cols-15 gap-2 text-center"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="create-ticket-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-[#0e1730] border border-[#1b2742] w-full max-w-lg rounded-2xl p-6 relative shadow-xl">
+      <h2 class="text-2xl font-bold text-center mb-6">Crear Ticket Manualmente</h2>
+      <form id="create-ticket-form" class="space-y-4">
+        <div>
+          <label for="create-username" class="block text-sm font-medium text-[#b9d4d0] mb-1">Nombre de Usuario</label>
+          <input type="text" id="create-username" required class="input">
+        </div>
+        <div>
+          <label for="create-columns" class="block text-sm font-medium text-[#b9d4d0] mb-1">Columnas (separadas por coma)</label>
+          <input type="text" id="create-columns" required class="input" placeholder="Ej: 1, 5, 12">
+        </div>
+        <div>
+          <label for="create-payment" class="block text-sm font-medium text-[#b9d4d0] mb-1">Método de Pago</label>
+          <select id="create-payment" class="select">
+            <option>Efectivo</option>
+            <option>Punto de Venta</option>
+            <option>Pago Móvil</option>
+            <option>Cortesía</option>
+          </select>
+        </div>
+        <div class="text-center bg-[#0b152c] p-3 rounded-lg">
+          <p class="text-[#9fb2b0]">Monto Total Calculado:</p>
+          <p id="create-monto-display" class="text-2xl font-bold text-emerald-300">0.00 Bs</p>
+        </div>
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" id="cancel-create-ticket-modal" class="btn btn-neutral flex items-center gap-2"><i data-lucide="x"></i> Cancelar</button>
+          <button type="submit" class="btn btn-primary flex items-center gap-2"><i data-lucide="check"></i> Crear Ticket</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide && lucide.createIcons) lucide.createIcons();
+    });
+  </script>
+  <script src="js/session.js"></script> 
+  <script src="js/config.js"></script>  
+  <script src="js/auth-admin.js"></script> 
+  <script src="js/admin.js"></script>
+  <script src="js/admin-tickets.js"></script>
+  <script src="js/admin-pagos.js"></script>
+  <script src="js/admin-juegos.js"></script>
+  <script src="js/admin-sorteo.js"></script>
+  <script src="js/admin-ganador.js"></script>
+  <script src="js/admin-resultados.js"></script>
+  <script src="js/admin-reportes.js"></script>
+</body>
+</html>
